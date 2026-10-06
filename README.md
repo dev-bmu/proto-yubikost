@@ -118,6 +118,10 @@ Data demo siap pakai: Putri Ananda punya pesanan yang buktinya menunggu verifika
 - Pesanan kedaluwarsa dicek saat halaman dibuka (lazy), bukan lewat cron.
 - Belum ada notifikasi otomatis (email/WA) saat bukti disetujui atau ditolak; status terlihat di Dashboard.
 - Data disimpan di file TSV lokal, satu proses. Produksi memakai PostgreSQL + Prisma (PRD §10).
+- **Deploy ke Vercel:** filesystem Vercel read-only kecuali `/tmp`, jadi saat env `VERCEL` ada, data hidup dan upload ditulis ke `/tmp/yubikost` (seed tetap dibaca dari `data/seed`). Akibatnya:
+  - data kembali ke seed setiap cold start, dan bisa berbeda antar-instance (contoh: akun yang baru didaftarkan bisa "hilang");
+  - route handler `/media/[key]`, `/admin/bukti/[id]`, `/admin/ktp/[id]` jalan di function terpisah, sehingga foto, bukti transfer, dan KTP yang di-upload saat demo tampil 404. Foto seed dan spesimen tetap tampil.
+  - Untuk demo dengan data yang bertahan, jalankan `npm run build && npm start` sebagai satu proses di host dengan disk yang bisa ditulis (VPS, Railway/Render dengan volume).
 - Kredensial Direct Add dikirim admin lewat tautan `wa.me`, belum otomatis.
 - Impor kamar dari Google Sheets (PRD §9.9) dan upload gambar QRIS belum ada. QRIS memakai URL gambar.
 - Upload foto tanpa kompresi/resize; maks 3 MB per file (JPG/PNG/WEBP, dicek dari isi file).

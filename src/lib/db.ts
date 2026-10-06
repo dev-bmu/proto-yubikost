@@ -5,16 +5,24 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import os from "node:os";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-const SEED_DIR = path.join(DATA_DIR, "seed");
-export const KTP_DIR = path.join(process.cwd(), "storage", "ktp");
-export const KTP_SEED_DIR = path.join(DATA_DIR, "seed-ktp");
+// Seed ikut ter-deploy (read-only). Data hidup & upload ditulis ke RUNTIME_ROOT.
+// Di Vercel filesystem read-only kecuali /tmp, jadi data hidup pindah ke sana.
+// ponytail: /tmp per-instance dan kosong lagi saat cold start (data kembali ke seed). Route handler (/media, /admin/bukti,
+// /admin/ktp) jalan di function terpisah dengan /tmp sendiri, jadi file yang di-upload saat demo di Vercel tidak bisa dibuka.
+// Produksi pakai PostgreSQL + object storage (PRD §10).
+const RUNTIME_ROOT = process.env.VERCEL ? path.join(os.tmpdir(), "yubikost") : process.cwd();
+const SEED_ROOT = path.join(process.cwd(), "data");
+const DATA_DIR = path.join(RUNTIME_ROOT, "data");
+const SEED_DIR = path.join(SEED_ROOT, "seed");
+export const KTP_DIR = path.join(RUNTIME_ROOT, "storage", "ktp");
+export const KTP_SEED_DIR = path.join(SEED_ROOT, "seed-ktp");
 /** Bukti transfer customer — privat seperti KTP, hanya dibaca lewat /admin/bukti/[id]. */
-export const PROOF_DIR = path.join(process.cwd(), "storage", "bukti");
-export const PROOF_SEED_DIR = path.join(DATA_DIR, "seed-bukti");
+export const PROOF_DIR = path.join(RUNTIME_ROOT, "storage", "bukti");
+export const PROOF_SEED_DIR = path.join(SEED_ROOT, "seed-bukti");
 /** Foto gedung & tipe kamar hasil upload admin — publik, di-serve lewat /media/[key]. */
-export const MEDIA_DIR = path.join(process.cwd(), "storage", "media");
+export const MEDIA_DIR = path.join(RUNTIME_ROOT, "storage", "media");
 
 // s = string, n = number, b = boolean, l = list (dipisah "|")
 type FT = { s: string; n: number; b: boolean; l: string[] };
@@ -109,7 +117,10 @@ function encode(type: keyof FT, value: unknown): string {
 
 function ensureFile(t: TableName) {
   const f = file(t);
-  if (!fs.existsSync(f)) fs.copyFileSync(path.join(SEED_DIR, `${t}.tsv`), f);
+  if (!fs.existsSync(f)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    fs.copyFileSync(path.join(SEED_DIR, `${t}.tsv`), f);
+  }
   return f;
 }
 
@@ -177,6 +188,7 @@ export function audit(actor: { id: string; name: string }, action: string, targe
 }
 
 export function resetData() {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
   for (const f of fs.readdirSync(SEED_DIR).filter((f) => f.endsWith(".tsv"))) {
     fs.copyFileSync(path.join(SEED_DIR, f), path.join(DATA_DIR, f));
   }

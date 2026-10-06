@@ -4,6 +4,8 @@ import path from "path";
 const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   devIndicators: false,
+  // Seed TSV & spesimen dibaca lewat fs saat runtime; pastikan ikut ter-bundle ke serverless function (Vercel).
+  outputFileTracingIncludes: { "/**": ["./data/seed/**", "./data/seed-ktp/**", "./data/seed-bukti/**"] },
   // Rute lama sebelum Dashboard Customer (v1.1)
   async redirects() {
     return [
