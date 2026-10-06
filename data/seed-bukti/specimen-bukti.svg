@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="720" viewBox="0 0 480 720">
+  <rect width="480" height="720" fill="#f8fafc"/>
+  <rect x="24" y="24" width="432" height="672" rx="24" fill="#fff" stroke="#e2e8f0" stroke-width="2"/>
+  <circle cx="240" cy="120" r="44" fill="#059669"/>
+  <path d="M218 120 l16 16 l30 -32" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="240" y="210" font-family="Arial, sans-serif" font-size="26" font-weight="700" fill="#0f172a" text-anchor="middle">Transfer Berhasil</text>
+  <text x="240" y="245" font-family="Arial, sans-serif" font-size="16" fill="#64748b" text-anchor="middle">SPESIMEN BUKTI — DATA DUMMY</text>
+  <g font-family="Arial, sans-serif" font-size="18" fill="#334155">
+    <text x="56" y="320">Tujuan</text><text x="424" y="320" text-anchor="end">BCA 1234567890</text>
+    <text x="56" y="360">Atas nama</text><text x="424" y="360" text-anchor="end">Brave Brawijaya</text>
+    <text x="56" y="400">Tanggal</text><text x="424" y="400" text-anchor="end">02 Okt 2026</text>
+    <text x="56" y="440">Berita</text><text x="424" y="440" text-anchor="end">Sewa kost</text>
+  </g>
+  <line x1="56" y1="480" x2="424" y2="480" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="56" y="530" font-family="Arial, sans-serif" font-size="20" font-weight="700" fill="#0f172a">Nominal</text>
+  <text x="424" y="530" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#6d51a1" text-anchor="end">Rp •••••••</text>
+  <text x="240" y="640" font-family="Arial, sans-serif" font-size="14" fill="#b91c1c" text-anchor="middle">Bukan bukti transfer asli</text>
+</svg>

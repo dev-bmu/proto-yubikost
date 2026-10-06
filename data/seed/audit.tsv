@@ -1,0 +1,5 @@
+id	actorId	actorName	action	targetId	meta	createdAt
+log-0001	adm-ops	Adit (Operasional)	lease.assign	lease-rina	Rina Aulia → kamar A-03	2026-01-12T09:00:00.000Z
+log-0002	adm-fin	Sari (Finance)	payment.approve	pay-1a2b3c4d	2026-05-12 → 2026-11-12	2026-05-11T09:00:00.000Z
+log-0003	adm-fin	Sari (Finance)	payment.reject	pay-9e8d7c6b	Nominal transfer kurang Rp100.000	2026-09-24T10:00:00.000Z
+log-0004	adm-ops	Adit (Operasional)	resident.direct_add	lease-ayu	Ayu Lestari → kamar B-01	2026-09-30T10:00:00.000Z

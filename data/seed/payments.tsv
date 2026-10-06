@@ -1,0 +1,54 @@
+id	kind	memberId	bookingId	leaseId	months	amount	channelId	proofKey	status	note	verifiedBy	verifiedAt	createdAt
+pay-bagus-1	SEWA_BARU	mbr-bagus		lease-bagus	12	11700000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2025-02-14T10:00:00.000Z	2025-02-13T09:00:00.000Z
+pay-citra-1	SEWA_BARU	mbr-citra		lease-citra-old	12	16250000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2025-05-09T10:00:00.000Z	2025-05-08T09:00:00.000Z
+pay-fajar-1	SEWA_BARU	mbr-fajar		lease-fajar	6	10150000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2025-09-24T10:00:00.000Z	2025-09-23T09:00:00.000Z
+pay-g59	SEWA_BARU	mbr-g06		lease-g6	3	4000000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2025-10-05T10:00:00.000Z	2025-10-04T13:00:00.000Z
+pay-g1623	SEWA_BARU	mbr-g17		lease-g17	6	8050000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2025-10-14T10:00:00.000Z	2025-10-13T14:00:00.000Z
+pay-g2635	SEWA_BARU	mbr-g27		lease-g27	6	6300000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2025-11-28T10:00:00.000Z	2025-11-27T14:00:00.000Z
+pay-g13	SEWA_BARU	mbr-g02		lease-g2	3	5200000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2025-12-16T10:00:00.000Z	2025-12-15T09:00:00.000Z
+pay-g510	PERPANJANGAN	mbr-g06		lease-g6	6	6000000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-01-05T10:00:00.000Z	2026-01-04T13:00:00.000Z
+pay-rina-1	SEWA_BARU	mbr-rina		lease-rina	4	6500000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-01-11T10:00:00.000Z	2026-01-10T09:00:00.000Z
+pay-g1828	SEWA_BARU	mbr-g19		lease-g19	6	8050000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-01-14T10:00:00.000Z	2026-01-13T16:00:00.000Z
+pay-bagus-2	PERPANJANGAN	mbr-bagus		lease-bagus	12	10800000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-02-13T10:00:00.000Z	2026-02-12T09:00:00.000Z
+pay-g1218	SEWA_BARU	mbr-g13		lease-g13	6	11200000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-02-21T10:00:00.000Z	2026-02-20T10:00:00.000Z
+pay-g813	SEWA_BARU	mbr-g09		lease-g9	6	10150000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-02-22T10:00:00.000Z	2026-02-21T16:00:00.000Z
+pay-g00	SEWA_BARU	mbr-g01		lease-g1	3	5200000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-04T10:00:00.000Z	2026-03-03T08:00:00.000Z
+pay-dimas-1	SEWA_BARU	mbr-dimas		lease-dimas	3	5000000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-09T10:00:00.000Z	2026-03-08T09:00:00.000Z
+pay-g14	PERPANJANGAN	mbr-g02		lease-g2	6	7800000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-16T10:00:00.000Z	2026-03-15T09:00:00.000Z
+pay-fajar-2	PERPANJANGAN	mbr-fajar		lease-fajar	6	8700000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-24T10:00:00.000Z	2026-03-23T09:00:00.000Z
+pay-g915	SEWA_BARU	mbr-g10		lease-g10	6	10150000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-25T10:00:00.000Z	2026-03-24T17:00:00.000Z
+pay-g47	SEWA_BARU	mbr-g05		lease-g5	6	11200000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-03-26T10:00:00.000Z	2026-03-25T12:00:00.000Z
+pay-g2131	SEWA_BARU	mbr-g22		lease-g22	12	13650000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-04-03T10:00:00.000Z	2026-04-02T09:00:00.000Z
+pay-g1624	PERPANJANGAN	mbr-g17		lease-g17	3	3450000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-04-14T10:00:00.000Z	2026-04-13T14:00:00.000Z
+pay-g2534	SEWA_BARU	mbr-g26		lease-g26	12	11700000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-04-29T10:00:00.000Z	2026-04-28T13:00:00.000Z
+pay-g1422	SEWA_BARU	mbr-g15		lease-g15	6	6650000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-05-04T10:00:00.000Z	2026-05-03T12:00:00.000Z
+pay-1a2b3c4d	PERPANJANGAN	mbr-rina		lease-rina	6	7800000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-05-11T10:00:00.000Z	2026-05-10T09:00:00.000Z
+pay-g2636	PERPANJANGAN	mbr-g27		lease-g27	6	5400000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-05-28T10:00:00.000Z	2026-05-27T14:00:00.000Z
+pay-g01	PERPANJANGAN	mbr-g01		lease-g1	3	3900000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-06-04T10:00:00.000Z	2026-06-03T08:00:00.000Z
+pay-dimas-2	PERPANJANGAN	mbr-dimas		lease-dimas	3	3750000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-06-09T10:00:00.000Z	2026-06-08T09:00:00.000Z
+pay-g2938	SEWA_BARU	mbr-g30		lease-g30	6	7350000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-06-14T10:00:00.000Z	2026-06-13T17:00:00.000Z
+pay-g511	PERPANJANGAN	mbr-g06		lease-g6	6	6000000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-07-05T10:00:00.000Z	2026-07-04T13:00:00.000Z
+pay-g1625	PERPANJANGAN	mbr-g17		lease-g17	3	3450000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-07-14T10:00:00.000Z	2026-07-13T14:00:00.000Z
+pay-g1829	PERPANJANGAN	mbr-g19		lease-g19	12	13800000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-07-14T10:00:00.000Z	2026-07-13T16:00:00.000Z
+pay-g1321	SEWA_BARU	mbr-g14		lease-g14	6	6650000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-07-16T10:00:00.000Z	2026-07-15T11:00:00.000Z
+pay-g612	SEWA_BARU	mbr-g07		lease-g7	12	16250000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-07-24T10:00:00.000Z	2026-07-23T14:00:00.000Z
+pay-g2837	SEWA_BARU	mbr-g29		lease-g29	6	7350000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-03T10:00:00.000Z	2026-08-02T16:00:00.000Z
+pay-g2433	SEWA_BARU	mbr-g25		lease-g25	12	16250000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-14T10:00:00.000Z	2026-08-13T12:00:00.000Z
+pay-g1219	PERPANJANGAN	mbr-g13		lease-g13	1	1600000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-21T10:00:00.000Z	2026-08-20T10:00:00.000Z
+pay-g814	PERPANJANGAN	mbr-g09		lease-g9	3	4350000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-22T10:00:00.000Z	2026-08-21T16:00:00.000Z
+pay-g1726	SEWA_BARU	mbr-g18		lease-g18	1	2300000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-30T10:00:00.000Z	2026-08-29T15:00:00.000Z
+pay-g26	SEWA_BARU	mbr-g03		lease-g3	12	16900000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-08-31T10:00:00.000Z	2026-08-30T10:00:00.000Z
+pay-g02	PERPANJANGAN	mbr-g01		lease-g1	3	3900000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-04T10:00:00.000Z	2026-09-03T08:00:00.000Z
+pay-g2232	SEWA_BARU	mbr-g23		lease-g23	12	13650000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-06T10:00:00.000Z	2026-09-05T10:00:00.000Z
+pay-dimas-3	PERPANJANGAN	mbr-dimas		lease-dimas	1	1250000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-09T10:00:00.000Z	2026-09-08T09:00:00.000Z
+pay-g1017	SEWA_BARU	mbr-g11		lease-g11	3	7000000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-10T10:00:00.000Z	2026-09-09T08:00:00.000Z
+pay-g2030	SEWA_BARU	mbr-g21		lease-g21	6	12250000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-16T10:00:00.000Z	2026-09-15T08:00:00.000Z
+pay-g15	PERPANJANGAN	mbr-g02		lease-g2	12	15600000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-16T10:00:00.000Z	2026-09-15T09:00:00.000Z
+pay-g1220	PERPANJANGAN	mbr-g13		lease-g13	3	4800000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-21T10:00:00.000Z	2026-09-20T10:00:00.000Z
+pay-9e8d7c6b	PERPANJANGAN	mbr-fajar		lease-fajar	1	1450000	ch-mandiri	specimen-bukti.svg	DITOLAK	Nominal transfer kurang Rp100.000	adm-fin	2026-09-24T10:00:00.000Z	2026-09-23T09:00:00.000Z
+pay-g916	PERPANJANGAN	mbr-g10		lease-g10	3	4350000	ch-bca	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-25T10:00:00.000Z	2026-09-24T17:00:00.000Z
+pay-g48	PERPANJANGAN	mbr-g05		lease-g5	6	9600000	ch-qris	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-26T10:00:00.000Z	2026-09-25T12:00:00.000Z
+pay-salsa-1	SEWA_BARU	mbr-salsa		lease-salsa	1	3200000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-27T10:00:00.000Z	2026-09-26T09:00:00.000Z
+pay-g1727	PERPANJANGAN	mbr-g18		lease-g18	1	1150000	ch-mandiri	specimen-bukti.svg	DISETUJUI		adm-fin	2026-09-29T10:00:00.000Z	2026-09-28T15:00:00.000Z
+pay-7f3a91c2	PERPANJANGAN	mbr-dimas		lease-dimas	3	3750000	ch-qris	specimen-bukti.svg	MENUNGGU_VERIFIKASI				2026-10-05T09:00:00.000Z
+pay-5c6d7e8f	SEWA_BARU	mbr-putri	bk-putri		3	6400000	ch-bca	specimen-bukti.svg	MENUNGGU_VERIFIKASI				2026-10-05T09:00:00.000Z

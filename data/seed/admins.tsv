@@ -1,0 +1,7 @@
+id	name	email	password	role
+adm-super	Super Admin	super@brave.test	4050eb65f4cb075d:c9cb35446867d3777304bda90d1eb28967805a5def0dfbe5bc5e91313de691cb	SUPER_ADMIN
+adm-manager	Maya (Manager)	manager@brave.test	7ec507d3190c433e:03568ee622751e85ec7757b043c4d92d3b654e96acb62c458ba5216bef0c1bea	MANAGER
+adm-ops	Adit (Operasional)	ops@brave.test	638f0eec9f0efd08:177ad35e28a5accf18c58652f401d463c09c7e429ca2ee33893187155739890f	OPERATIONAL
+adm-mkt	Anin (Marketing)	marketing@brave.test	785a246d45b58093:16e738af4a192fdd946898e156de544502e3afae8edeeb9eb3de3d861b909636	MARKETING
+adm-fin	Sari (Finance)	finance@brave.test	52be05c28e3993ec:86b255ebf35614555f56c3b139d3893b1f261de9ec0a985d418fca4612c44b85	FINANCE
+adm-legal	Legal Brave	legal@brave.test	657deac497846956:e3c4b4cb4e2e788f7525b0d26116da20da86fa5bcfde7eb7358d4d6b5a2531b1	LEGAL

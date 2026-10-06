@@ -1,0 +1,10 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+# data runtime & file privat (dibuat ulang dari data/seed lewat `npm run reset-data`)
+data/*.tsv
+storage/ktp/*
+storage/bukti/*
+storage/media/*
+!storage/ktp/.gitkeep

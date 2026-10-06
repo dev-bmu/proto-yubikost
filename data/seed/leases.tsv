@@ -1,0 +1,31 @@
+id	memberId	roomId	startDate	dueDate	status	createdBy	endedAt	createdAt
+lease-rina	mbr-rina	room-casa-a-03	2026-01-12	2026-11-12	ACTIVE	adm-ops		2026-01-12T09:00:00.000Z
+lease-dimas	mbr-dimas	room-sigura-b-02	2026-03-10	2026-10-10	ACTIVE	adm-ops		2026-03-10T09:00:00.000Z
+lease-salsa	mbr-salsa	room-kalpataru-a-01	2026-09-28	2026-10-28	ACTIVE	adm-ops		2026-09-28T09:00:00.000Z
+lease-fajar	mbr-fajar	room-ketawang-a-05	2025-09-25	2026-09-25	ACTIVE	adm-ops		2025-09-25T09:00:00.000Z
+lease-ayu	mbr-ayu	room-dinoyo-b-01	2026-06-01	2026-12-01	ACTIVE	adm-ops		2026-06-01T09:00:00.000Z
+lease-bagus	mbr-bagus	room-joyo-a-01	2025-02-15	2027-02-15	ACTIVE	adm-ops		2025-02-15T09:00:00.000Z
+lease-citra-old	mbr-citra	room-tlogomas-b-01	2025-05-10	2026-05-10	ENDED	adm-ops	2026-05-10T12:00:00.000Z	2025-05-10T09:00:00.000Z
+lease-g1	mbr-g01	room-casa-a-01	2026-03-05	2026-12-05	ACTIVE	adm-fin		2026-03-05T09:00:00.000Z
+lease-g2	mbr-g02	room-casa-a-02	2025-12-17	2027-09-17	ACTIVE	adm-fin		2025-12-17T09:00:00.000Z
+lease-g3	mbr-g03	room-casa-a-04	2026-09-01	2027-09-01	ACTIVE	adm-fin		2026-09-01T09:00:00.000Z
+lease-g5	mbr-g05	room-casa-b-03	2026-03-27	2027-03-27	ACTIVE	adm-fin		2026-03-27T09:00:00.000Z
+lease-g6	mbr-g06	room-sigura-a-01	2025-10-06	2027-01-06	ACTIVE	adm-fin		2025-10-06T09:00:00.000Z
+lease-g7	mbr-g07	room-sigura-b-03	2026-07-25	2027-07-25	ACTIVE	adm-fin		2026-07-25T09:00:00.000Z
+lease-g9	mbr-g09	room-ketawang-a-01	2026-02-23	2026-11-23	ACTIVE	adm-fin		2026-02-23T09:00:00.000Z
+lease-g10	mbr-g10	room-ketawang-a-02	2026-03-26	2026-12-26	ACTIVE	adm-fin		2026-03-26T09:00:00.000Z
+lease-g11	mbr-g11	room-ketawang-b-01	2026-09-11	2026-12-11	ACTIVE	adm-fin		2026-09-11T09:00:00.000Z
+lease-g13	mbr-g13	room-kalpataru-a-02	2026-02-22	2026-12-22	ACTIVE	adm-fin		2026-02-22T09:00:00.000Z
+lease-g14	mbr-g14	room-sumbersari-a-01	2026-07-17	2027-01-17	ACTIVE	adm-fin		2026-07-17T09:00:00.000Z
+lease-g15	mbr-g15	room-sumbersari-a-03	2026-05-05	2026-11-05	ACTIVE	adm-fin		2026-05-05T09:00:00.000Z
+lease-g17	mbr-g17	room-sumbersari-b-01	2025-10-15	2026-10-15	ACTIVE	adm-fin		2025-10-15T09:00:00.000Z
+lease-g18	mbr-g18	room-sumbersari-b-02	2026-08-31	2026-10-30	ACTIVE	adm-fin		2026-08-31T09:00:00.000Z
+lease-g19	mbr-g19	room-sumbersari-b-03	2026-01-15	2027-07-15	ACTIVE	adm-fin		2026-01-15T09:00:00.000Z
+lease-g21	mbr-g21	room-dinoyo-a-02	2026-09-17	2027-03-17	ACTIVE	adm-fin		2026-09-17T09:00:00.000Z
+lease-g22	mbr-g22	room-tlogomas-a-01	2026-04-04	2027-04-04	ACTIVE	adm-fin		2026-04-04T09:00:00.000Z
+lease-g23	mbr-g23	room-tlogomas-a-02	2026-09-07	2027-09-07	ACTIVE	adm-fin		2026-09-07T09:00:00.000Z
+lease-g25	mbr-g25	room-tlogomas-b-02	2026-08-15	2027-08-15	ACTIVE	adm-fin		2026-08-15T09:00:00.000Z
+lease-g26	mbr-g26	room-joyo-a-02	2026-04-30	2027-04-30	ACTIVE	adm-fin		2026-04-30T09:00:00.000Z
+lease-g27	mbr-g27	room-joyo-a-03	2025-11-29	2026-11-29	ACTIVE	adm-fin		2025-11-29T09:00:00.000Z
+lease-g29	mbr-g29	room-joyo-b-02	2026-08-04	2027-02-04	ACTIVE	adm-fin		2026-08-04T09:00:00.000Z
+lease-g30	mbr-g30	room-joyo-b-03	2026-06-15	2026-12-15	ACTIVE	adm-fin		2026-06-15T09:00:00.000Z

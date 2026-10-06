@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/* Token design system yubikost — PRD-YUBIKOST-BRAVE.md §4 & Lampiran B */
+@theme {
+  --color-primary: #6d51a1;
+  --color-primary-dark: #563f82;
+  --color-primary-light: #9284b7;
+  --color-primary-ultralight: #f3f0f8;
+  --color-accent: #ffdf3a;
+  --color-accent-glow: #fff7ab;
+  --color-surface: #f8fafc;
+
+  --color-brand-navy: #3f458b;
+  --color-hero-mid: #7d64ad;
+  --color-hero-deep: #45316b;
+  --color-whatsapp: #25d366;
+  --color-whatsapp-dark: #20bd5a;
+
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+
+  --shadow-card: 0 4px 24px -4px rgba(109, 81, 161, 0.15);
+  --shadow-card-hover: 0 8px 40px -8px rgba(109, 81, 161, 0.25);
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+
+  * {
+    @apply border-slate-200;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* Di permukaan ungu, fokus memakai accent */
+  .on-purple :focus-visible {
+    outline-color: var(--color-accent);
+  }
+}
+
+@utility gradient-accent {
+  background: linear-gradient(135deg, #fff7ab 0%, #ffdf3a 100%);
+}
+
+@utility gradient-hero {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-hero-mid) 60%, var(--color-primary-dark) 100%);
+}
+
+@utility gradient-primary {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+}
+
+@utility text-gold {
+  background: linear-gradient(90deg, #fff7ab 0%, #ffee77 50%, #ffdf3a 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+@keyframes chain-left {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@keyframes float-orb {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.7; }
+  50% { transform: translate(20px, -20px) scale(1.15); opacity: 0.9; }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 223, 58, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 223, 58, 0); }
+}
+
+@utility animate-chain-left {
+  display: flex;
+  width: max-content;
+  animation: chain-left 45s linear infinite;
+}
+
+@utility animate-ticker {
+  display: flex;
+  width: max-content;
+  animation: chain-left 38s linear infinite;
+}
+
+@utility animate-float-orb {
+  animation: float-orb 5s ease-in-out infinite;
+}
+
+@utility animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+/* Pause marquee/ticker saat hover atau fokus keyboard (WCAG 2.2.2) */
+.pause-on-hover:hover > *,
+.pause-on-hover:focus-within > * {
+  animation-play-state: paused;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-primary);
+  border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

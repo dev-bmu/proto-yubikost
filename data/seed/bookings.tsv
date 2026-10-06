@@ -1,0 +1,2 @@
+id	memberId	kostId	roomId	startDate	months	status	expiresAt	leaseId	note	createdAt	updatedAt
+bk-putri	mbr-putri	kost-kalpataru	room-kalpataru-a-03	2026-10-15	3	MENUNGGU_VERIFIKASI	2026-10-03T00:30:00.000Z			2026-10-02T00:30:00.000Z	2026-10-02T01:05:00.000Z
