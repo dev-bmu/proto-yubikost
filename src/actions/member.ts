@@ -41,6 +41,8 @@ export async function registerMember(input: {
     source: "catalog",
     consentAt: nowIso(),
     createdAt: nowIso(),
+    customerNo: "",
+    accurateExportedAt: "",
   });
   await setMemberSession(member.id);
   revalidatePath("/", "layout");

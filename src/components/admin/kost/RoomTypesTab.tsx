@@ -146,7 +146,7 @@ export function RoomTypesTab({
             </Notice>
             {editing && editing.reserved > 0 && Number(form.price) !== editing.monthlyPrice && (
               <Notice tone="warning">
-                {editing.reserved} kamar bertipe ini sedang dipesan. Tagihan pesanan yang belum dibayar ikut memakai harga baru.
+                {editing.reserved} kamar bertipe ini sedang dipesan. Pesanan yang sudah dibuat tetap memakai harga saat dipesan; harga baru berlaku untuk pesanan berikutnya.
               </Notice>
             )}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

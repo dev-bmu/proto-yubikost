@@ -7,7 +7,7 @@ import { NikReveal } from "@/components/admin/people/NikReveal";
 import { ResidentActions } from "@/components/admin/people/ResidentActions";
 import { button, card, Notice, Pill } from "@/components/ui";
 import { requireAdmin } from "@/lib/admin-guard";
-import { PAYMENT_KIND_LABEL, PAYMENT_STATUS, paymentRef } from "@/lib/constants";
+import { PAYMENT_STATUS, paymentLabel, paymentRef } from "@/lib/constants";
 import { all } from "@/lib/db";
 import { formatDate, formatPhone, leaseStatus, maskNik, rupiah } from "@/lib/format";
 import { can } from "@/lib/perm";
@@ -211,7 +211,7 @@ export default async function PenghuniDetailPage({ params }: { params: Promise<{
               return (
                 <tr key={r.id}>
                   <td className={`${td} whitespace-nowrap`}>{formatDate(r.createdAt, "short")}</td>
-                  <td className={td}>{PAYMENT_KIND_LABEL[r.kind] ?? r.kind} · {r.months} bulan</td>
+                  <td className={td}>{paymentLabel(r)} · {r.months} bulan</td>
                   <td className={`${td} tabular-nums whitespace-nowrap`}>{rupiah(r.amount)}</td>
                   <td className={`${td} font-mono`}>{paymentRef(r.id)}</td>
                   <td className={td}>

@@ -1,45 +1,80 @@
-// Kartu Kost (PRD C-05): foto luar gedung 3:4, status tanpa angka, satu-satunya CTA = GateButton.
+// Kartu Kost (PRD C-05; tampilan v1.3): foto luar gedung 3:4, status tanpa angka, harga + DP & deposit (dengan penjelasan),
+// satu-satunya CTA = GateButton. Dipakai di dalam pembungkus landing (font-display & token paper/ink/brand).
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { ChevronDown, MapPin } from "lucide-react";
 import type { KostCard as FullKostCard } from "@/lib/queries";
-import { rupiah } from "@/lib/format";
-import { card, kostTypeClass, Pill } from "@/components/ui";
-import { FacilityChips, Photo } from "@/components/media";
+import { DEPOSIT_AMOUNT, DP_TIERS } from "@/lib/constants";
+import { cn, rupiah } from "@/lib/format";
+import { Photo } from "@/components/media";
 import { GateButton } from "@/components/gate/GateButton";
+import { lineBtn } from "@/components/landing/theme";
 
 /** Data kartu yang aman dikirim ke klien (KostCard sudah tanpa kontak pemilik gedung). */
 export type KostCardData = FullKostCard;
 
+const DP = DP_TIERS[0];
+const DEPOSIT_RP = rupiah(DEPOSIT_AMOUNT);
+const MAX_FACILITIES = 3;
+const chip = "inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-ink shadow-sm";
+
 export function KostCard({ kost: k }: { kost: KostCardData }) {
+  const more = k.facilities.length - MAX_FACILITIES;
   return (
-    <article className={card(true, "flex flex-col overflow-hidden group")}>
-      <div className="relative aspect-[3/4] overflow-hidden">
-        <Photo src={k.photos[0]} alt={`Foto luar gedung ${k.name}`} className="transition-transform duration-500 group-hover:scale-105" />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/65 via-transparent to-black/75" aria-hidden="true" />
+    <article className="group flex flex-col">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl bg-sand">
+        <Photo src={k.photos[0]} alt={`Foto luar gedung ${k.name}`} className="transition-transform duration-700 group-hover:scale-[1.03]" />
         <div className="absolute top-3 left-3 flex flex-wrap gap-1.5">
-          <Pill solid tone={k.isAvailable ? "success" : "danger"}>
-            <span className="w-1.5 h-1.5 rounded-full bg-white" aria-hidden="true" />
+          <span className={chip}>
+            <span className={cn("w-1.5 h-1.5 rounded-full", k.isAvailable ? "bg-emerald-600" : "bg-red-600")} aria-hidden="true" />
             {k.isAvailable ? "Tersedia" : "Penuh"}
-          </Pill>
-          {k.isNew && <Pill solid tone="info">Baru</Pill>}
+          </span>
+          {k.isNew && <span className={cn(chip, "bg-ink text-paper")}>Baru</span>}
         </div>
-        <Pill solid className={`absolute top-3 right-3 ${kostTypeClass(k.type)}`}>Kost {k.type}</Pill>
-        <p className="absolute bottom-3 inset-x-3 flex items-center gap-1.5 text-sm font-semibold text-white">
-          <MapPin className="w-4 h-4 text-accent shrink-0" aria-hidden="true" />
+        <span className={cn(chip, "absolute top-3 right-3")}>Kost {k.type}</span>
+      </div>
+
+      <div className="pt-4 flex flex-col flex-1">
+        <h3 className="font-display font-bold text-2xl leading-tight tracking-tight text-ink line-clamp-1">
+          <Link href={`/kost/${k.slug}`} className="hover:underline decoration-1 underline-offset-4">{k.name}</Link>
+        </h3>
+        <p className="mt-1 flex items-center gap-1.5 text-sm text-ink-soft">
+          <MapPin className="w-4 h-4 shrink-0" aria-hidden="true" />
           <span className="truncate">{k.area}</span>
         </p>
-      </div>
-      <div className="p-5 flex flex-col gap-3 flex-1">
-        <h3 className="font-extrabold text-lg text-slate-900 line-clamp-1 group-hover:text-primary transition-colors">
-          <Link href={`/kost/${k.slug}`}>{k.name}</Link>
-        </h3>
-        <FacilityChips items={k.facilities} />
-        <p className="mt-auto pt-1">
-          <span className="text-xs text-slate-500">Mulai </span>
-          <span className="text-xl font-extrabold text-primary tracking-tight tabular-nums">{rupiah(k.startPrice)}</span>
-          <span className="text-xs text-slate-500"> /bulan</span>
-        </p>
-        <GateButton slug={k.slug} name={k.name} subtitle={`Kost ${k.type} · ${k.area}`} className="w-full" />
+        {k.facilities.length > 0 && (
+          <p className="mt-1 text-sm text-ink-muted line-clamp-1">
+            <span className="sr-only">Fasilitas: </span>
+            {k.facilities.slice(0, MAX_FACILITIES).join(" · ")}
+            {more > 0 && (
+              <>
+                {" "}· +{more}
+                <span className="sr-only"> lainnya</span>
+              </>
+            )}
+          </p>
+        )}
+
+        {/* Tanpa mt-auto: baris di atas selalu 1 baris (clamp), dan kartu tetangga tidak bergeser saat penjelasan DP dibuka */}
+        <div className="pt-4">
+          <p className="pt-4 border-t border-line">
+            <span className="text-sm text-ink-muted">Mulai </span>
+            <span className="text-xl font-bold tracking-tight text-ink tabular-nums">{rupiah(k.startPrice)}</span>
+            <span className="text-sm text-ink-muted"> /bulan</span>
+          </p>
+          {/* Permintaan klien: harga + deposit Rp200.000 + penjelasannya di setiap kartu katalog */}
+          <details className="group/dp mt-1">
+            <summary className="inline-flex items-center gap-1 min-h-8 cursor-pointer list-none rounded text-sm text-ink-soft hover:text-ink [&::-webkit-details-marker]:hidden">
+              DP mulai {DP.pct}% · Deposit {DEPOSIT_RP}
+              <ChevronDown className="w-4 h-4 transition-transform group-open/dp:rotate-180" aria-hidden="true" />
+              <span className="sr-only"> (penjelasan)</span>
+            </summary>
+            <p className="mt-1 text-xs leading-relaxed text-ink-soft">
+              Bayar uang muka (DP) mulai {DP.pct}% dari total sewa untuk menahan kamar, berlaku {DP.days} hari. Sisa sewa dan deposit {DEPOSIT_RP} dibayar
+              saat check-in. Deposit kembali setelah masa sewa berakhir sesuai ketentuan.
+            </p>
+          </details>
+          <GateButton slug={k.slug} name={k.name} subtitle={`Kost ${k.type} · ${k.area}`} className={cn(lineBtn, "mt-4 w-full")} />
+        </div>
       </div>
     </article>
   );

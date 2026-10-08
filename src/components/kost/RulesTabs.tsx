@@ -36,12 +36,12 @@ export function RulesTabs() {
             tabIndex={i === active ? 0 : -1}
             onClick={() => setActive(i)}
             className={cn(
-              "inline-flex items-center gap-2 min-h-11 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold border transition-colors",
-              i === active ? "bg-primary text-white border-primary" : "bg-white text-slate-600 border-slate-200 hover:border-primary/40 hover:text-primary",
+              "inline-flex items-center gap-2 min-h-11 px-4 py-2 rounded-full text-xs sm:text-sm font-semibold border transition-colors",
+              i === active ? "bg-ink text-paper border-ink" : "bg-white text-ink-soft border-line hover:border-ink hover:text-ink",
             )}
           >
             {r.category}
-            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-bold", i === active ? "bg-white/20 text-white" : "bg-primary/10 text-primary")}>
+            <span className={cn("text-xs px-1.5 py-0.5 rounded-full font-bold", i === active ? "bg-paper/20 text-paper" : "bg-sand text-ink-soft")}>
               <span className="sr-only">: </span>
               {r.items.length}
               <span className="sr-only"> butir</span>
@@ -54,12 +54,12 @@ export function RulesTabs() {
         id={`${id}-panel`}
         aria-labelledby={`${id}-tab-${active}`}
         tabIndex={0}
-        className="p-4 sm:p-5 rounded-2xl bg-white border border-slate-200 shadow-sm"
+        className="p-4 sm:p-5 rounded-2xl bg-white border border-line"
       >
         <ol className="space-y-3">
           {rule.items.map((item, i) => (
-            <li key={item} className="flex gap-3 text-sm text-slate-600 leading-relaxed">
-              <span className="w-6 h-6 rounded-lg bg-primary/10 text-primary font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
+            <li key={item} className="flex gap-3 text-sm text-ink-soft leading-relaxed">
+              <span className="w-6 h-6 rounded-full bg-sand text-ink font-bold text-xs flex items-center justify-center shrink-0" aria-hidden="true">
                 {i + 1}
               </span>
               {item}

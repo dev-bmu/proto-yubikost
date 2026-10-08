@@ -276,7 +276,7 @@ function AssignDialog({
   }
 
   return (
-    <Modal open onClose={onClose} title="Assign ke Kamar" subtitle="Jalur manual (bayar offline/walk-in). Pembayaran dari Dashboard diverifikasi di menu Pembayaran." icon={<DoorOpen className="w-4 h-4" />}>
+    <Modal open onClose={onClose} title="Assign ke Kamar" subtitle="Jalur manual (bayar offline/walk-in). Pembayaran dari Dashboard diverifikasi di menu Finance → Konfirmasi Pembayaran." icon={<DoorOpen className="w-4 h-4" />}>
       <form onSubmit={submit} className="p-5 space-y-4" noValidate>
         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-sm">
           <p className="text-xs font-semibold text-slate-600">Prospect</p>

@@ -1,17 +1,18 @@
-// Pembayaran (PRD §8.4, v1.2): tagihan, kanal transfer/QRIS, upload bukti, riwayat.
+// Pembayaran (PRD §8.4, v1.2; Ketentuan Kos Brave 17 Juli 2026): uang muka → pelunasan saat check-in, perpanjangan, riwayat.
 import Link from "next/link";
-import { ArrowRight, CalendarClock, Hourglass, ReceiptText, Wallet } from "lucide-react";
+import { ArrowRight, CalendarCheck, CalendarClock, ReceiptText, Wallet } from "lucide-react";
 import { CancelBookingButton } from "@/components/customer/CancelBookingButton";
-import { Countdown } from "@/components/customer/Countdown";
-import { BookingCard, NotifyAdmin, PageHeader, PaymentHistory, ProgressSteps, Timeline } from "@/components/customer/parts";
+import {
+  BookingCard, BookingCountdown, BookingTerms, BookingWaitingCard, CancelViaCare, Info, inDays, PageHeader, PaymentHistory, ProgressSteps, WaitingCard,
+} from "@/components/customer/parts";
 import { PaymentForm } from "@/components/customer/PaymentForm";
 import { Photo } from "@/components/media";
 import { button, card, Pill } from "@/components/ui";
-import { paymentRef } from "@/lib/constants";
+import { BOOKING_STAGE_LABEL, paymentLabel, paymentRef } from "@/lib/constants";
 import { customerGuard } from "@/lib/customer-guard";
-import { byId } from "@/lib/db";
+import { all, byId } from "@/lib/db";
 import { addMonths, formatDate, formatDateTime, leaseStatus, rupiah } from "@/lib/format";
-import { activeChannels, type PaymentView } from "@/lib/queries";
+import { activeChannels } from "@/lib/queries";
 import { waPaymentNotice } from "@/lib/wa";
 
 export const metadata = { title: "Pembayaran" };
@@ -20,6 +21,10 @@ export default async function PembayaranPage() {
   const ctx = await customerGuard("/dashboard/pembayaran");
   const { member, resident, booking, bookingPayment, payments } = ctx;
   const channels = activeChannels();
+  // Riwayat: label "Uang Muka 25%" butuh dpPct pesanan; nomor faktur dari tabel faktur.
+  const dpOf = new Map(all("bookings").filter((b) => b.memberId === member.id).map((b) => [b.id, b.dpPct]));
+  const invoiceNo = new Map(all("invoices").filter((i) => i.memberId === member.id).map((i) => [i.id, i.number]));
+  const history = payments.map((p) => ({ ...p, dpPct: dpOf.get(p.bookingId), invoiceNumber: invoiceNo.get(p.invoiceId) }));
 
   let body: React.ReactNode;
   if (resident) {
@@ -54,57 +59,68 @@ export default async function PembayaranPage() {
         }
       />
     );
-  } else if (booking?.status === "MENUNGGU_PEMBAYARAN") {
-    const label = `${booking.kost?.name} · Kamar ${booking.room?.number}`;
-    body = (
-      <div className="space-y-6">
-        <ProgressSteps current={1} rejected={Boolean(booking.note)} />
-        {booking.note && (
-          <div className="rounded-2xl bg-red-100 text-red-700 p-4 text-sm" role="alert">
-            <strong>Bukti sebelumnya ditolak:</strong> {booking.note}. Upload ulang bukti yang benar.
-          </div>
-        )}
-        <PaymentForm
-          kind="SEWA_BARU"
-          bookingId={booking.id}
-          monthlyPrice={booking.room?.monthlyPrice ?? 0}
-          months={booking.months}
-          channels={channels}
-          notice={{ name: member.name, kost: booking.kost?.name ?? "-", room: booking.room?.number ?? "-" }}
-          head={
-            <ItemHead
-              photo={booking.room?.photos[0] ?? booking.kost?.photos[0]}
-              title={`Sewa Baru · Kamar ${booking.room?.number}`}
-              subtitle={`${booking.kost?.name} · mulai ${formatDate(booking.startDate, "short")}`}
-            >
-              <div className="mt-4">
-                <Countdown expiresAt={booking.expiresAt} deadline={formatDateTime(booking.expiresAt)} />
-              </div>
-            </ItemHead>
-          }
-          footer={<CancelBookingButton id={booking.id} label={label} className="w-full" />}
-        />
-      </div>
-    );
-  } else if (booking?.status === "MENUNGGU_VERIFIKASI") {
+  } else if (booking) {
+    const lunas = booking.stage === "PELUNASAN";
+    const unpaid = booking.status === "MENUNGGU_PEMBAYARAN";
+    const place = `${booking.kost?.name} · Kamar ${booking.room?.number}`;
+    const checkIn = formatDate(booking.startDate);
     const typeName = booking.room && byId("roomTypes", booking.room.typeId)?.name;
+    // Hanya field tagihan yang dikirim ke komponen klien (data kost lengkap tidak ikut).
+    const { stage, status, months, monthlyPrice, dpPct, bill, paid, due } = booking;
+    const cancelViaCare = <CancelViaCare name={member.name} place={`${place} (check-in ${checkIn})`} />;
     body = (
       <div className="space-y-6">
-        <ProgressSteps current={2} />
-        {bookingPayment && (
-          <WaitingCard
-            title="Bukti pembayaran sedang diverifikasi"
-            payment={bookingPayment}
-            notifyHref={waPaymentNotice({ name: member.name, kind: "sewa baru", kost: booking.kost?.name ?? "-", room: booking.room?.number ?? "-", amount: bookingPayment.amount, ref: paymentRef(bookingPayment.id) })}
-            steps={[
-              { label: "Pesanan dibuat", desc: formatDateTime(booking.createdAt), state: "done" },
-              { label: "Bukti pembayaran dikirim", desc: formatDateTime(bookingPayment.createdAt), state: "done" },
-              { label: "Verifikasi admin", desc: "Maksimal 1 hari kerja", state: "active" },
-              { label: "Lengkapi biodata", state: "todo" },
-            ]}
-          />
+        <ProgressSteps current={lunas ? 3 : unpaid ? 1 : 2} rejected={unpaid && Boolean(booking.note)} />
+        {unpaid ? (
+          <>
+            <div>
+              <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">
+                {lunas ? "Uang muka diterima · lunasi saat check-in" : `Bayar uang muka ${dpPct}%`}
+              </h2>
+              <p className="mt-1 text-sm sm:text-base text-slate-600 leading-relaxed max-w-3xl">
+                {lunas
+                  ? `Kamar ditahan untuk Anda sampai ${formatDateTime(booking.expiresAt)}. Bayar sisa sewa + deposit ${rupiah(due)} saat atau sebelum check-in ${checkIn}.`
+                  : `Transfer ${rupiah(due)} lalu upload bukti sebelum ${formatDateTime(booking.expiresAt)}. Sisa sewa + deposit ${rupiah(bill.settle)} dibayar saat check-in ${checkIn}.`}
+              </p>
+            </div>
+            {booking.note && (
+              <div className="rounded-2xl bg-red-100 text-red-700 p-4 text-sm" role="alert">
+                <strong>Bukti {BOOKING_STAGE_LABEL[stage]?.toLowerCase() ?? "pembayaran"} sebelumnya ditolak:</strong> {booking.note}. Upload ulang bukti yang benar.
+              </div>
+            )}
+            <PaymentForm
+              kind="SEWA_BARU"
+              bookingId={booking.id}
+              invoiceNumber={booking.invoice?.number}
+              rent={{ stage, status, months, monthlyPrice, dpPct, bill, paid, due }}
+              channels={channels}
+              notice={{ name: member.name, kost: booking.kost?.name ?? "-", room: booking.room?.number ?? "-" }}
+              head={
+                <ItemHead
+                  photo={booking.room?.photos[0] ?? booking.kost?.photos[0]}
+                  title={`${paymentLabel({ kind: "SEWA_BARU", stage, dpPct })} · Kamar ${booking.room?.number}`}
+                  subtitle={`${booking.kost?.name} · ${months} bulan`}
+                >
+                  <div className="mt-4 space-y-3">
+                    <Info icon={CalendarCheck} label="Check-in" value={`${checkIn} · ${inDays(booking.startDate)}`} className="bg-primary-ultralight border-primary/20" />
+                    <BookingCountdown booking={booking} />
+                  </div>
+                </ItemHead>
+              }
+              footer={lunas ? cancelViaCare : <CancelBookingButton id={booking.id} label={place} className="w-full" />}
+            />
+            <BookingTerms />
+          </>
+        ) : (
+          <>
+            {bookingPayment && <BookingWaitingCard booking={booking} payment={bookingPayment} memberName={member.name} />}
+            <BookingCard booking={booking} typeName={typeName} />
+            <div className="grid md:grid-cols-2 gap-4 items-start">
+              {cancelViaCare}
+              <BookingTerms />
+            </div>
+          </>
         )}
-        <BookingCard booking={booking} typeName={typeName} />
       </div>
     );
   } else {
@@ -139,12 +155,11 @@ export default async function PembayaranPage() {
             <p className="text-sm text-slate-600">{payments.length} pembayaran tercatat, terbaru di atas.</p>
           </div>
         </div>
-        <PaymentHistory payments={payments} />
+        <PaymentHistory payments={history} />
       </section>
     </div>
   );
 }
-
 
 function ItemHead({ photo, title, subtitle, children }: { photo?: string; title: string; subtitle: string; children?: React.ReactNode }) {
   return (
@@ -160,36 +175,5 @@ function ItemHead({ photo, title, subtitle, children }: { photo?: string; title:
       </div>
       {children}
     </div>
-  );
-}
-
-function WaitingCard({ title, payment, notifyHref, steps }: { title: string; payment: PaymentView; notifyHref: string; steps: Parameters<typeof Timeline>[0]["items"] }) {
-  return (
-    <section className={card(false, "p-6 sm:p-8 grid md:grid-cols-2 gap-8")} aria-labelledby="menunggu-title">
-      <div>
-        <Pill tone="info">
-          <Hourglass className="w-3.5 h-3.5" aria-hidden="true" /> Menunggu Verifikasi
-        </Pill>
-        <h2 id="menunggu-title" className="mt-3 text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">{title}</h2>
-        <p className="mt-2 text-sm text-slate-600 leading-relaxed">Admin memverifikasi maksimal 1 hari kerja. Anda tidak perlu mengirim ulang bukti.</p>
-        <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-          {[
-            ["Ref", <span key="r" className="font-mono">{paymentRef(payment.id)}</span>],
-            ["Nominal", rupiah(payment.amount)],
-            ["Paket", `${payment.months} bulan`],
-            ["Kanal", payment.channelLabel],
-          ].map(([k, v]) => (
-            <div key={k as string} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-              <dt className="text-xs text-slate-500">{k}</dt>
-              <dd className="font-bold text-slate-800 tabular-nums">{v}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="mt-3">
-          <NotifyAdmin href={notifyHref} />
-        </div>
-      </div>
-      <Timeline items={steps} />
-    </section>
   );
 }

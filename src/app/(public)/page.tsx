@@ -1,19 +1,18 @@
-// Home = Katalog Kost (PRD v1.2): hero + pencarian → katalog → cara sewa → keunggulan → mitra → testimoni → FAQ → banner CTA.
-import type { Metadata } from "next";
+// Home = Katalog Kost (PRD v1.2; tampilan v1.3: putih bersih + navy & gradien logo, judul Red Hat Display): hero + pencarian → katalog → cara sewa → keunggulan → mitra → testimoni → FAQ.
+// Latar section netral (tanpa warna logo); CTA penutup ada di Footer. Mobile: hero hanya judul + pencarian.
+import type { Metadata, Viewport } from "next";
 import Form from "next/form";
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUp, BadgeCheck, Building2, ChevronDown, FileCheck2, Headset, KeyRound, LayoutDashboard, MessageCircle, Search,
-  ShieldCheck, Sparkles, Star, Upload, Users, Wrench, type LucideIcon,
-} from "lucide-react";
+import { ArrowUp, FileCheck2, MessageCircle, Plus, Search, ShieldCheck, Sparkles, Star, Wrench, type LucideIcon } from "lucide-react";
 import { CountUp } from "@/components/landing/CountUp";
+import { inkBtn, lineBtn, display } from "@/components/landing/theme";
 import { KostCatalog } from "@/components/kost/KostCatalog";
 import { Photo } from "@/components/media";
-import { button, card, Container, Eyebrow, SectionHeader } from "@/components/ui";
-import { DEPOSIT_MONTHS, HOLD_HOURS, KOST_TYPES, MIN_CONTRACT, PACKAGES } from "@/lib/constants";
+import { Container } from "@/components/ui";
+import { DEPOSIT_AMOUNT, DEPOSIT_TERMS, DP_TIERS, HOLD_HOURS, KOST_TYPES, MIN_CONTRACT, PACKAGES } from "@/lib/constants";
 import { all } from "@/lib/db";
-import { cn, initials } from "@/lib/format";
+import { cn, initials, rupiah } from "@/lib/format";
 import { kostCards, landingStats } from "@/lib/queries";
 import { waKost } from "@/lib/wa";
 
@@ -22,32 +21,38 @@ export const metadata: Metadata = {
   description: "Kost premium di Malang yang dikelola penuh dan terverifikasi Brave Brawijaya: bersih, aman 24 jam, kontrak resmi, sewa langsung dari dashboard.",
 };
 
-const STEPS: { icon: LucideIcon; title: string; desc: string }[] = [
-  { icon: Search, title: "Pilih Kost", desc: "Cari gedung sesuai area, tipe, dan budget, lalu tekan Ajukan Sewa." },
-  { icon: LayoutDashboard, title: "Daftar & Pilih Kamar", desc: "Masuk ke Dashboard, pilih tipe dan nomor kamar beserta paket sewanya." },
-  { icon: Upload, title: "Bayar & Upload Bukti", desc: `Transfer atau QRIS, lalu unggah bukti. Kamar ditahan ${HOLD_HOURS} jam untuk Anda.` },
-  { icon: KeyRound, title: "Verifikasi & Check-in", desc: "Tim Finance memverifikasi pembayaran, lalu kamar siap Anda tempati." },
+export const viewport: Viewport = { themeColor: "#ffffff" };
+
+const DP_MIN = DP_TIERS[0].pct;
+const DEPOSIT_RP = rupiah(DEPOSIT_AMOUNT);
+
+const STEPS = [
+  { title: "Pilih kost", desc: "Cari gedung sesuai area, tipe, dan budget, lalu tekan Ajukan Sewa." },
+  { title: "Pilih kamar", desc: "Masuk ke Dashboard, pilih tipe, nomor kamar, dan paket sewa." },
+  { title: "Bayar uang muka", desc: `Mulai ${DP_MIN}% lewat transfer atau QRIS, lalu unggah bukti. Kamar ditahan ${HOLD_HOURS} jam.` },
+  { title: "Check-in", desc: `Tim Finance memverifikasi bukti. Sisa sewa dan deposit ${DEPOSIT_RP} dilunasi saat check-in.` },
 ];
 
 const USP: { icon: LucideIcon; title: string; desc: string }[] = [
-  { icon: ShieldCheck, title: "Aman 24 Jam", desc: "CCTV area bersama, akses kartu, dan tim lapangan yang siaga." },
-  { icon: Wrench, title: "Maintenance Cepat", desc: "Keluhan AC, air, atau listrik ditangani tim teknisi Brave." },
-  { icon: Sparkles, title: "Kebersihan Terjaga", desc: "Area bersama dibersihkan rutin sesuai standar Brave." },
-  { icon: FileCheck2, title: "Kontrak & Tagihan Resmi", desc: "Tagihan, bukti bayar, dan masa sewa tercatat rapi di Dashboard." },
+  { icon: ShieldCheck, title: "Aman 24 jam", desc: "CCTV area bersama, akses kartu, dan tim lapangan yang siaga." },
+  { icon: Wrench, title: "Maintenance cepat", desc: "Keluhan AC, air, atau listrik ditangani tim teknisi Brave." },
+  { icon: Sparkles, title: "Kebersihan terjaga", desc: "Area bersama dibersihkan rutin sesuai standar Brave." },
+  { icon: FileCheck2, title: "Kontrak & tagihan resmi", desc: "Tagihan, bukti bayar, dan masa sewa tercatat rapi di Dashboard." },
 ];
 
 const FAQ = [
   {
     q: "Bagaimana cara menyewa kamar?",
-    a: "Pilih kost di katalog, tekan Ajukan Sewa, lalu masuk atau daftar. Di Dashboard Anda memilih tipe dan nomor kamar, membayar tagihan pertama, dan mengunggah bukti pembayaran.",
+    a: "Pilih kost di katalog, tekan Ajukan Sewa, lalu masuk atau daftar. Di Dashboard Anda memilih tipe dan nomor kamar serta tanggal check-in, membayar uang muka, lalu mengunggah bukti transfer. Sisa sewa dan deposit dilunasi saat check-in.",
   },
   {
     q: "Berapa yang dibayar di awal?",
-    a: `Sewa sesuai paket (${PACKAGES.join(", ")} bulan) ditambah deposit ${DEPOSIT_MONTHS} bulan sewa. Deposit dikembalikan saat masa sewa berakhir sesuai ketentuan. Kontrak minimal ${MIN_CONTRACT}.`,
+    a: `Bayar uang muka minimal ${DP_MIN}% dari sewa paket (${PACKAGES.join(", ")} bulan) untuk menahan kamar. Sisa sewa dan deposit ${DEPOSIT_RP} dilunasi saat check-in. Deposit kembali saat masa sewa berakhir sesuai ketentuan. Kontrak minimal ${MIN_CONTRACT}.`,
   },
+  { q: "Kapan deposit dikembalikan?", a: DEPOSIT_TERMS.join(" ") },
   {
     q: "Berapa lama kamar ditahan setelah dipesan?",
-    a: `Kamar ditahan ${HOLD_HOURS} jam sejak pesanan dibuat. Bila bukti pembayaran belum diunggah sampai batas waktu, pesanan kedaluwarsa dan kamar dilepas.`,
+    a: `Kamar ditahan ${HOLD_HOURS} jam sejak pesanan dibuat untuk pembayaran uang muka. Setelah uang muka diverifikasi, kamar ditahan sampai masa berlaku uang muka (13–28 hari). Bila batas waktu lewat, pesanan kedaluwarsa dan kamar dilepas.`,
   },
   {
     q: "Bagaimana cara membayar dan memantau verifikasinya?",
@@ -68,6 +73,7 @@ const LOGOS = Array.from({ length: 14 }, (_, i) => i + 1);
 const TRACK_WRAP =
   "pause-on-hover overflow-hidden focus-visible:outline-offset-[-3px] [mask-image:linear-gradient(to_right,transparent,black_6%,black_94%,transparent)]";
 const NEW_TAB = <span className="sr-only"> (membuka tab baru)</span>;
+const H2 = "font-display font-extrabold text-4xl sm:text-5xl leading-[1.05] tracking-tight text-ink text-balance";
 const firstArea = (area: string) => area.split(",")[0].trim();
 
 type Props = { searchParams: Promise<{ q?: string | string[]; tipe?: string | string[] }> };
@@ -85,137 +91,106 @@ export default async function HomePage({ searchParams }: Props) {
   const [featured, second] = kosts.filter((k) => k.isAvailable).sort((a, b) => a.startPrice - b.startPrice).slice(0, 2);
   const areas = [...new Set(kosts.map((k) => firstArea(k.area)))].slice(0, 5);
   const trust = [
-    { value: s.kost, label: "Gedung Kost" },
-    { value: s.residents, label: "Penghuni Aktif" },
-    { value: 500, suffix: "+", label: "Klien Puas" },
+    { value: s.kost, label: "Gedung kost" },
+    { value: s.residents, label: "Penghuni aktif" },
+    { value: 500, suffix: "+", label: "Klien puas" },
   ];
 
   return (
-    <>
-      {/* 1. Hero ringkas + pencarian (C-09). Kolom kanan (lg+) = etalase kost unggulan; mobile tetap satu kolom agar katalog cepat terlihat */}
-      <section className="on-purple relative overflow-hidden bg-gradient-to-br from-primary via-hero-mid to-hero-deep pt-12 sm:pt-16 pb-24 sm:pb-28">
-        <div aria-hidden="true" className="hidden md:block absolute inset-0 z-0 pointer-events-none">
-          <div className="absolute -top-40 -left-32 w-[550px] h-[550px] rounded-full bg-primary-light/40 blur-[130px] animate-float-orb" />
-          <div className="absolute top-1/3 -right-40 w-[480px] h-[480px] rounded-full bg-accent/20 blur-[130px] animate-float-orb" style={{ animationDelay: "-2s", animationDuration: "6s" }} />
-        </div>
-
-        <Container className="relative z-10 grid lg:grid-cols-12 gap-10 items-center">
-          <div className="lg:col-span-7 max-w-3xl">
-            <Eyebrow onPurple>100% Managed & Verified by Brave Brawijaya</Eyebrow>
-            <h1 className="mt-5 text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight text-balance text-white">
-              Kost Premium di Malang, <span className="text-gold">Dikelola Penuh</span> oleh Brave
+    <div className={cn(display.variable, "on-paper bg-paper text-ink")}>
+      {/* 1. Hero: judul + pencarian (C-09). Foto etalase hanya lg+; mobile cukup judul + pencarian agar katalog cepat terlihat */}
+      <section aria-labelledby="judul-hero" className="pt-8 pb-10 sm:pt-16 sm:pb-20 lg:pt-20 lg:pb-24">
+        <Container className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+          <div className="lg:col-span-6">
+            <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-ink-soft">
+              <ShieldCheck className="w-4 h-4 text-brand" aria-hidden="true" /> Terverifikasi Brave Brawijaya
+            </p>
+            <h1 id="judul-hero" className="mt-4 sm:mt-6 font-display font-extrabold text-[2.6rem] sm:text-6xl xl:text-[4.25rem] leading-[1.02] tracking-[-0.025em] text-balance">
+              Kost premium di Malang, <span className="text-logo-gradient">dikelola penuh.</span>
             </h1>
-            <p className="mt-4 max-w-2xl text-base sm:text-lg leading-relaxed text-white">
-              Kost bersih, aman 24 jam, dan berfasilitas lengkap untuk mahasiswa & pekerja. Pilih kamar, pesan, dan bayar langsung dari Dashboard.
+            <p className="hidden sm:block mt-5 max-w-md text-lg leading-relaxed text-ink-soft">
+              Bersih, aman 24 jam, kontrak resmi. Pesan dan bayar langsung dari Dashboard.
             </p>
 
-            <Form key={`${q}|${tipe}`} action="/#katalog" role="search" aria-label="Cari kost" className="mt-7 p-2 rounded-2xl bg-white/10 border border-white/20 backdrop-blur-md shadow-2xl shadow-hero-deep/40 flex flex-col sm:flex-row gap-2">
-              <div className="flex-1 min-w-0 flex items-center gap-3 rounded-xl bg-white px-4 py-2 focus-within:ring-2 focus-within:ring-accent">
-                <Search className="w-5 h-5 text-primary shrink-0" aria-hidden="true" />
+            <Form
+              key={`${q}|${tipe}`}
+              action="/#katalog"
+              role="search"
+              aria-label="Cari kost"
+              className="mt-7 sm:mt-9 max-w-xl grid grid-cols-[1fr_auto] sm:grid-cols-[1fr_11rem_auto] rounded-2xl border border-line-strong bg-white"
+            >
+              <div className="col-span-2 sm:col-span-1 flex items-center gap-3 px-4 py-2.5 border-b sm:border-b-0 sm:border-r border-line rounded-t-2xl sm:rounded-tr-none sm:rounded-l-2xl focus-within:ring-2 focus-within:ring-inset focus-within:ring-ink">
+                <Search className="w-5 h-5 text-ink-soft shrink-0" aria-hidden="true" />
                 <div className="flex-1 min-w-0">
-                  <label htmlFor="hero-q" className="block text-xs font-semibold text-slate-500">Nama kost atau area</label>
+                  <label htmlFor="hero-q" className="block text-xs font-semibold text-ink-muted">Nama kost atau area</label>
                   <input
                     id="hero-q"
                     name="q"
                     type="search"
                     defaultValue={q}
                     placeholder="mis. Suhat, Dinoyo"
-                    className="w-full bg-transparent text-sm font-semibold text-slate-900 placeholder:font-normal placeholder:text-slate-500 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+                    className="w-full bg-transparent text-base sm:text-sm font-semibold text-ink placeholder:font-normal placeholder:text-ink-muted focus:outline-none [&::-webkit-search-cancel-button]:hidden"
                   />
                 </div>
               </div>
-              <div className="sm:w-48 rounded-xl bg-white px-4 py-2 focus-within:ring-2 focus-within:ring-accent">
-                <label htmlFor="hero-tipe" className="block text-xs font-semibold text-slate-500">Tipe kost</label>
-                <select id="hero-tipe" name="tipe" defaultValue={tipe} className="w-full bg-transparent text-sm font-semibold text-slate-900 focus:outline-none cursor-pointer">
+              <div className="px-4 py-2.5 rounded-bl-2xl sm:rounded-none focus-within:ring-2 focus-within:ring-inset focus-within:ring-ink">
+                <label htmlFor="hero-tipe" className="block text-xs font-semibold text-ink-muted">Tipe kost</label>
+                <select id="hero-tipe" name="tipe" defaultValue={tipe} className="w-full bg-transparent text-base sm:text-sm font-semibold text-ink focus:outline-none cursor-pointer">
                   <option value="">Semua tipe</option>
                   {KOST_TYPES.map((t) => (
                     <option key={t} value={t}>Kost {t}</option>
                   ))}
                 </select>
               </div>
-              <button type="submit" className={button("accent", "lg", "sm:px-7")}>
+              <button type="submit" className={cn(inkBtn, "m-1.5 px-6 min-h-12 text-sm")}>
                 <Search className="w-4 h-4" aria-hidden="true" /> Cari
               </button>
             </Form>
 
             {areas.length > 0 && (
-              <div className="mt-4 flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold text-white">Area populer:</span>
+              <div className="hidden sm:flex mt-5 flex-wrap items-center gap-x-4 text-sm">
+                <span className="text-ink-muted">Populer:</span>
                 {areas.map((a) => (
-                  <Link key={a} href={`/?q=${encodeURIComponent(a)}#katalog`} className="min-h-11 sm:min-h-9 inline-flex items-center px-3 rounded-full bg-white/10 border border-white/20 text-sm font-medium text-white hover:bg-white/20 transition-colors">
+                  <Link key={a} href={`/?q=${encodeURIComponent(a)}#katalog`} className="min-h-9 inline-flex items-center font-medium text-ink underline decoration-line-strong underline-offset-4 hover:decoration-ink">
                     {a}
                   </Link>
                 ))}
               </div>
             )}
-
-            <div className="mt-7 pt-5 border-t border-white/15 flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-10">
-              <ul className="flex gap-8">
-                {trust.map((t) => (
-                  <li key={t.label}>
-                    <p className="text-xl sm:text-2xl font-extrabold text-white tracking-tight">
-                      <CountUp value={t.value} suffix={t.suffix} />
-                    </p>
-                    <p className="text-sm text-white">{t.label}</p>
-                  </li>
-                ))}
-              </ul>
-              <a href={waKost()} target="_blank" rel="noopener noreferrer" className={button("glass", "md", "sm:ml-auto self-start sm:self-auto")}>
-                <MessageCircle className="w-4 h-4" aria-hidden="true" /> Konsultasi WhatsApp{NEW_TAB}
-              </a>
-            </div>
           </div>
 
           {featured && (
-            <div className="hidden lg:block lg:col-span-5 relative h-[460px]" aria-hidden="true">
-              <div className="absolute right-0 top-0 w-[78%] h-[88%] rounded-3xl overflow-hidden shadow-2xl ring-4 ring-white/20">
-                <Photo src={featured.photos[0]} alt="" sizes="380px" priority />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent" />
-                <div className="absolute left-[34%] right-5 bottom-5 text-right text-white">
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-700 text-xs font-bold">● Tersedia</span>
-                  <p className="mt-2 text-xl font-extrabold leading-tight">{featured.name}</p>
-                  <p className="text-sm text-white">{featured.area}</p>
-                  <p className="mt-2 text-sm text-white">mulai <span className="text-lg font-extrabold text-accent">Rp {featured.startPrice.toLocaleString("id-ID")}</span>/bulan</p>
-                </div>
-              </div>
+            <div className="hidden lg:grid lg:col-span-6 grid-cols-5 gap-5 items-end">
               {second && (
-                <div className="absolute left-0 bottom-0 w-[44%] aspect-[3/4] rounded-2xl overflow-hidden shadow-2xl ring-4 ring-white/30">
-                  <Photo src={second.photos[0]} alt="" sizes="200px" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
-                  <p className="absolute left-3 right-3 bottom-3 text-sm font-bold text-white leading-tight">{second.name}</p>
-                </div>
+                <Link href={`/kost/${second.slug}`} className="group col-span-2 mb-16 block">
+                  <span className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-sand">
+                    <Photo src={second.photos[0]} alt="" sizes="240px" priority className="transition-transform duration-700 group-hover:scale-105" />
+                  </span>
+                  <span className="mt-3 block text-sm font-semibold text-ink group-hover:underline underline-offset-4">{second.name}</span>
+                  <span className="block text-sm text-ink-muted">{firstArea(second.area)}</span>
+                </Link>
               )}
-              <div className="absolute left-2 top-10 flex items-center gap-2.5 rounded-2xl bg-white px-4 py-3 shadow-2xl">
-                <span className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">✓</span>
-                <span>
-                  <span className="block text-sm font-bold text-slate-900">Terverifikasi Brave</span>
-                  <span className="block text-xs text-slate-500">Dikelola penuh tim operasional</span>
+              <Link href={`/kost/${featured.slug}`} className="group col-span-3 col-start-3 block">
+                <span className="relative block aspect-[3/4] overflow-hidden mask-house bg-sand">
+                  <Photo src={featured.photos[0]} alt="" sizes="(min-width: 1280px) 360px, 30vw" priority className="transition-transform duration-700 group-hover:scale-105" />
                 </span>
-              </div>
-              <div className="absolute right-4 bottom-[-6px] flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 shadow-2xl">
-                <span className="w-8 h-8 rounded-lg gradient-accent text-slate-950 text-sm font-extrabold flex items-center justify-center">Rp</span>
-                <span className="text-xs font-semibold text-slate-700 leading-tight">Bayar & upload bukti<br />langsung di Dashboard</span>
-              </div>
+                <span className="mt-3 flex items-baseline justify-between gap-3 text-sm">
+                  <span className="font-semibold text-ink group-hover:underline underline-offset-4">{featured.name}</span>
+                  <span className="text-ink-muted tabular-nums whitespace-nowrap">mulai {rupiah(featured.startPrice)}</span>
+                </span>
+              </Link>
             </div>
           )}
         </Container>
-        <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="absolute bottom-0 inset-x-0 block w-full h-12 sm:h-16 lg:h-20 text-slate-50" aria-hidden="true">
-          <path d="M0,30 C250,110 450,105 650,55 C850,10 1050,15 1200,45 L1200,120 L0,120 Z" fill="currentColor" />
-        </svg>
       </section>
 
-      {/* 2. Katalog (PRD §6.2 C–F) */}
-      <section id="katalog" aria-labelledby="judul-katalog" className="scroll-mt-20 pt-6 sm:pt-8 pb-16 sm:pb-20">
+      {/* 2. Katalog (PRD §6.2 C–F). Tiap kartu memuat harga + DP & deposit beserta penjelasannya */}
+      <section id="katalog" aria-labelledby="judul-katalog" className="scroll-mt-16 pt-10 pb-16 sm:pt-20 sm:pb-24 border-t border-line">
         <Container>
-          <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
-            <div>
-              <h2 id="judul-katalog" className="flex items-center gap-3 text-2xl sm:text-3xl font-extrabold text-slate-900">
-                <Building2 className="w-7 h-7 text-primary" aria-hidden="true" /> Katalog Kost Malang
-              </h2>
-              <p className="mt-2 text-slate-600">Semua gedung dikelola dan diverifikasi langsung oleh tim Brave.</p>
-            </div>
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
-              <BadgeCheck className="w-5 h-5" aria-hidden="true" /> Foto & harga diperbarui tim Brave
+          <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-3">
+            <h2 id="judul-katalog" className={H2}>Katalog kost</h2>
+            <p className="hidden sm:block max-w-sm text-sm leading-relaxed text-ink-soft md:text-right">
+              Harga per bulan. DP mulai {DP_MIN}% untuk menahan kamar; deposit {DEPOSIT_RP} dibayar saat check-in.
             </p>
           </div>
           <KostCatalog key={`${q}|${tipe}`} kosts={kosts} initialQuery={q} initialType={tipe} />
@@ -223,89 +198,81 @@ export default async function HomePage({ searchParams }: Props) {
       </section>
 
       {/* 3. Cara sewa */}
-      <section id="cara-sewa" aria-labelledby="judul-cara-sewa" className="scroll-mt-16 py-20 sm:py-24 bg-white border-y border-slate-200/80">
+      <section id="cara-sewa" aria-labelledby="judul-cara-sewa" className="scroll-mt-16 py-16 sm:py-24 bg-white border-y border-line">
         <Container>
-          <div className="text-center mb-14">
-            <div className="mb-3"><Eyebrow>Cara Sewa</Eyebrow></div>
-            <h2 id="judul-cara-sewa" className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-4 tracking-tight">Sewa Kamar dalam 4 Langkah</h2>
-            <p className="text-slate-600 max-w-2xl mx-auto text-base leading-relaxed">
-              Semua proses berjalan online dari Dashboard Anda. Tanpa perlu bolak-balik ke lokasi, kecuali Anda ingin survey dulu.
+          <div className="grid lg:grid-cols-12 gap-4 lg:gap-8 items-end mb-10 sm:mb-14">
+            <h2 id="judul-cara-sewa" className={cn(H2, "lg:col-span-6")}>Sewa kamar dalam 4 langkah</h2>
+            <p className="hidden sm:block lg:col-span-5 lg:col-start-8 leading-relaxed text-ink-soft">
+              Semua proses berjalan online dari Dashboard. Survey lokasi tetap bisa dijadwalkan bila Anda ingin melihat langsung.
             </p>
           </div>
-          <ol className="relative grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-10 lg:before:content-[''] lg:before:absolute lg:before:top-10 lg:before:left-[12.5%] lg:before:right-[12.5%] lg:before:border-t-2 lg:before:border-dashed lg:before:border-primary/25">
-            {STEPS.map(({ icon: Icon, title, desc }, i) => (
-              <li key={title} className="relative text-center px-2">
-                <div className="relative mx-auto w-20 h-20 rounded-3xl gradient-primary text-white flex items-center justify-center shadow-lg shadow-primary/25 ring-8 ring-white">
-                  <Icon className="w-8 h-8" aria-hidden="true" />
-                  <span className="absolute -top-2 -right-2 w-8 h-8 rounded-full gradient-accent text-slate-950 text-sm font-extrabold flex items-center justify-center ring-4 ring-white" aria-hidden="true">
-                    {i + 1}
-                  </span>
+          <ol className="grid sm:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-8 sm:gap-y-12">
+            {STEPS.map((step, i) => (
+              <li key={step.title} className="grid grid-cols-[3rem_1fr] sm:block gap-x-3 pt-5 border-t border-ink">
+                <span className="font-display font-extrabold text-4xl sm:text-5xl leading-none text-brand" aria-hidden="true">
+                  {String(i + 1).padStart(2, "0")}
+                </span>
+                <div className="sm:mt-6">
+                  <h3 className="font-semibold text-ink">
+                    <span className="sr-only">Langkah {i + 1}: </span>
+                    {step.title}
+                  </h3>
+                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{step.desc}</p>
                 </div>
-                <p className="mt-5 text-xs font-bold uppercase tracking-widest text-primary">Langkah {i + 1}</p>
-                <h3 className="mt-1 text-lg font-bold text-slate-900">{title}</h3>
-                <p className="mt-2 text-sm text-slate-600 leading-relaxed max-w-xs mx-auto">{desc}</p>
               </li>
             ))}
           </ol>
-          <div className="mt-12 text-center">
-            <a href="#katalog" className={button("primary", "lg")}>
-              Ajukan Sewa Sekarang <ArrowUp className="w-4 h-4" aria-hidden="true" />
-            </a>
-          </div>
+          <a href="#katalog" className={cn(lineBtn, "mt-10 sm:mt-14 px-6 min-h-12 text-sm")}>
+            Mulai dari katalog <ArrowUp className="w-4 h-4" aria-hidden="true" />
+          </a>
         </Container>
       </section>
 
-      {/* 4. Keunggulan dikelola Brave */}
-      <section aria-labelledby="judul-usp" className="py-20 sm:py-24">
-        <Container className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
-          <div className="relative max-w-md mx-auto lg:mx-0 w-full">
-            <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-card">
-              <Photo src={showcase?.photos[1] ?? showcase?.photos[0]} alt={showcase ? `Suasana ${showcase.name}` : "Kost Brave"} sizes="(min-width: 1024px) 448px, 100vw" />
-            </div>
-            <div className={card(false, "absolute -bottom-6 -right-2 sm:-right-8 p-4 flex items-center gap-3")}>
-              <span className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center" aria-hidden="true">
-                <Users className="w-5 h-5" />
-              </span>
-              <span>
-                <span className="block text-2xl font-extrabold text-slate-900 tabular-nums">{s.residents}</span>
-                <span className="block text-xs text-slate-500">Penghuni aktif saat ini</span>
-              </span>
-            </div>
-            <div className="on-purple absolute -top-5 -left-2 sm:-left-6 rounded-2xl gradient-hero px-4 py-3 shadow-2xl">
-              <span className="flex items-center gap-2 text-sm font-bold text-white">
-                <Headset className="w-5 h-5 text-accent" aria-hidden="true" /> Customer Care via WhatsApp
-              </span>
-            </div>
+      {/* 4. Keunggulan dikelola Brave + angka kepercayaan (dipindah dari hero) */}
+      <section aria-labelledby="judul-usp" className="py-16 sm:py-24">
+        <Container className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+          <div className="hidden lg:block lg:col-span-5 relative aspect-[4/5] overflow-hidden rounded-2xl bg-sand">
+            <Photo
+              src={showcase?.photos[1] ?? showcase?.photos[0]}
+              alt={showcase ? `Suasana ${showcase.name}` : "Kost Brave"}
+              sizes="(min-width: 1280px) 460px, 40vw"
+            />
           </div>
-
-          <div>
-            <Eyebrow>Kenapa Kost Brave</Eyebrow>
-            <h2 id="judul-usp" className="mt-3 text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-              Dikelola Profesional, Bukan Sekadar Disewakan
-            </h2>
-            <p className="mt-4 text-slate-600 leading-relaxed">
+          <div className="lg:col-span-7">
+            <h2 id="judul-usp" className={H2}>Dikelola profesional, bukan sekadar disewakan.</h2>
+            <p className="hidden sm:block mt-5 max-w-xl leading-relaxed text-ink-soft">
               Setiap gedung dikelola langsung tim Brave, dari kebersihan sampai administrasi. Anda cukup fokus kuliah atau bekerja.
             </p>
-            <ul className="mt-8 grid sm:grid-cols-2 gap-4">
+            <ul className="mt-10 grid sm:grid-cols-2 gap-x-10 gap-y-7 sm:gap-y-9">
               {USP.map(({ icon: Icon, title, desc }) => (
-                <li key={title} className={card(true, "p-5")}>
-                  <span className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary flex items-center justify-center" aria-hidden="true">
-                    <Icon className="w-6 h-6" />
-                  </span>
-                  <h3 className="mt-4 font-bold text-slate-900">{title}</h3>
-                  <p className="mt-1 text-sm text-slate-600 leading-relaxed">{desc}</p>
+                <li key={title} className="flex gap-4 sm:block">
+                  <Icon className="w-6 h-6 shrink-0 text-ink" strokeWidth={1.5} aria-hidden="true" />
+                  <div className="sm:mt-4">
+                    <h3 className="font-semibold text-ink">{title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-ink-soft">{desc}</p>
+                  </div>
                 </li>
               ))}
             </ul>
+            <dl className="mt-12 pt-8 border-t border-line grid grid-cols-3 gap-4">
+              {trust.map((t) => (
+                <div key={t.label} className="flex flex-col-reverse">
+                  <dt className="mt-1 text-xs sm:text-sm text-ink-muted">{t.label}</dt>
+                  <dd className="font-display font-extrabold text-4xl sm:text-5xl leading-none tracking-tight text-ink">
+                    <CountUp value={t.value} suffix={t.suffix} />
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </Container>
       </section>
 
       {/* 5. Marquee mitra (C-17) */}
-      <section aria-labelledby="judul-mitra" className="py-12 bg-white border-y border-slate-200/80">
+      <section aria-labelledby="judul-mitra" className="py-12 bg-white border-y border-line">
         <Container>
-          <h2 id="judul-mitra" className="text-center text-sm font-semibold text-slate-600 mb-8">
-            Dipercaya Oleh Institusi, Kampus, & Brand Terkemuka di Malang Raya
+          <h2 id="judul-mitra" className="text-center text-sm font-medium text-ink-soft mb-8">
+            Dipercaya institusi, kampus, dan brand di Malang Raya
           </h2>
         </Container>
         <div tabIndex={0} role="region" aria-label="Logo mitra Brave, fokus untuk menghentikan gerak" className={TRACK_WRAP}>
@@ -319,7 +286,7 @@ export default async function HomePage({ searchParams }: Props) {
                     alt={dup ? "" : `Logo mitra Brave ${n}`}
                     width={144}
                     height={64}
-                    className="w-28 sm:w-36 h-12 sm:h-16 object-contain grayscale opacity-60 transition duration-300 hover:grayscale-0 hover:opacity-100"
+                    className="w-24 sm:w-32 h-10 sm:h-14 object-contain grayscale opacity-60 transition duration-300 hover:grayscale-0 hover:opacity-100"
                   />
                 </div>
               );
@@ -328,94 +295,67 @@ export default async function HomePage({ searchParams }: Props) {
         </div>
       </section>
 
-      {/* 6. Testimoni (C-17 ticker) — disembunyikan bila data kosong */}
+      {/* 6. Testimoni — statis (tanpa ticker), 3 di mobile. Disembunyikan bila data kosong */}
       {testimonials.length > 0 && (
-        <section id="testimoni" className="scroll-mt-16 py-20 sm:py-24 bg-gradient-to-b from-primary/5 via-primary/10 to-transparent">
+        <section id="testimoni" aria-labelledby="judul-testimoni" className="scroll-mt-16 py-16 sm:py-24">
           <Container>
-            <SectionHeader eyebrow="Testimoni" title="Apa Kata Penghuni & Pemilik Kost?">
-              Cerita dari penghuni dan pemilik gedung yang telah merasakan layanan Brave. Nama disamarkan demi privasi.
-            </SectionHeader>
-          </Container>
-          <div tabIndex={0} role="region" aria-label="Daftar testimoni, fokus untuk menghentikan gerak" className={TRACK_WRAP}>
-            <div className="animate-ticker py-4">
-              {[...testimonials, ...testimonials].map((t, i) => {
-                const dup = i >= testimonials.length;
-                return (
-                  <div key={i} aria-hidden={dup || undefined} className="shrink-0 pr-6">
-                    <figure className={card(true, "w-[300px] sm:w-[380px] h-[230px] p-6 sm:p-7 flex flex-col")}>
-                      <div className="flex gap-0.5" role="img" aria-label={`Rating ${t.rating} dari 5`}>
-                        {Array.from({ length: 5 }, (_, k) => (
-                          <Star key={k} className={cn("w-4 h-4", k < t.rating ? "fill-accent text-accent" : "text-slate-300")} aria-hidden="true" />
-                        ))}
-                      </div>
-                      <blockquote className="mt-4 text-slate-700 italic font-medium leading-relaxed line-clamp-3">“{t.content}”</blockquote>
-                      <figcaption className="mt-auto flex items-center gap-3 pt-4 border-t border-slate-100">
-                        <span aria-hidden="true" className="w-11 h-11 shrink-0 rounded-full gradient-primary text-white text-sm font-bold flex items-center justify-center">
-                          {initials(t.name.replace(/^(Ibu|Bapak)\s+/, ""))}
-                        </span>
-                        <span>
-                          <span className="block font-bold text-slate-900">{t.name}</span>
-                          <span className="block text-xs text-slate-500">Layanan {t.tag} Brave</span>
-                        </span>
-                      </figcaption>
-                    </figure>
-                  </div>
-                );
-              })}
+            <div className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-3">
+              <h2 id="judul-testimoni" className={H2}>Kata penghuni & pemilik kost</h2>
+              <p className="hidden sm:block text-sm text-ink-muted">Nama disamarkan demi privasi.</p>
             </div>
-          </div>
+            <div className="columns-1 md:columns-2 lg:columns-3 gap-6">
+              {testimonials.slice(0, 6).map((t, i) => (
+                <figure key={t.id} className={cn("break-inside-avoid mb-6 rounded-2xl border border-line bg-white p-6 sm:p-7", i >= 3 && "hidden md:block")}>
+                  <div className="flex gap-0.5" role="img" aria-label={`Rating ${t.rating} dari 5`}>
+                    {Array.from({ length: 5 }, (_, k) => (
+                      <Star key={k} className={cn("w-4 h-4", k < t.rating ? "fill-brand text-brand" : "text-line-strong")} aria-hidden="true" />
+                    ))}
+                  </div>
+                  <blockquote className="mt-4 font-display font-medium text-xl leading-snug text-ink">“{t.content}”</blockquote>
+                  <figcaption className="mt-6 flex items-center gap-3 text-sm">
+                    <span aria-hidden="true" className="w-9 h-9 shrink-0 rounded-full bg-sand text-ink text-xs font-bold flex items-center justify-center">
+                      {initials(t.name.replace(/^(Ibu|Bapak)\s+/, ""))}
+                    </span>
+                    <span>
+                      <span className="block font-semibold text-ink">{t.name}</span>
+                      <span className="block text-ink-muted">Layanan {t.tag} Brave</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </Container>
         </section>
       )}
 
       {/* 7. FAQ */}
-      <section id="faq" aria-labelledby="judul-faq" className="scroll-mt-16 py-16 sm:py-20">
-        <Container className="grid lg:grid-cols-12 gap-10">
+      <section id="faq" aria-labelledby="judul-faq" className="scroll-mt-16 py-16 sm:py-24 border-t border-line">
+        <Container className="grid lg:grid-cols-12 gap-8 lg:gap-12">
           <div className="lg:col-span-4">
-            <Eyebrow>Tanya Jawab</Eyebrow>
-            <h2 id="judul-faq" className="mt-3 text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">Pertanyaan yang Sering Diajukan</h2>
-            <p className="mt-4 text-slate-600 leading-relaxed">Belum menemukan jawabannya? Tim Kost kami siap membantu setiap hari.</p>
-            <a href={waKost("Halo Brave, saya punya pertanyaan tentang sewa Kost.")} target="_blank" rel="noopener noreferrer" className={button("whatsapp", "md", "mt-6")}>
+            <h2 id="judul-faq" className={H2}>Pertanyaan yang sering diajukan</h2>
+            <p className="hidden sm:block mt-4 leading-relaxed text-ink-soft">Belum menemukan jawabannya? Tim Kost kami siap membantu setiap hari.</p>
+            <a
+              href={waKost("Halo Brave, saya punya pertanyaan tentang sewa Kost.")}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={cn(lineBtn, "mt-6 px-5 min-h-11 text-sm")}
+            >
               <MessageCircle className="w-4 h-4" aria-hidden="true" /> Tanya via WhatsApp{NEW_TAB}
             </a>
           </div>
-          <div className="lg:col-span-8 space-y-3">
-            {FAQ.map((f, i) => (
-              <details key={f.q} open={i === 0} className={card(false, "group open:border-primary/40")}>
-                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none p-5 font-bold text-slate-900 [&::-webkit-details-marker]:hidden rounded-2xl">
+          <div className="lg:col-span-8 border-t border-ink">
+            {FAQ.map((f) => (
+              <details key={f.q} className="group border-b border-line">
+                <summary className="flex items-center justify-between gap-4 cursor-pointer list-none py-5 font-semibold text-ink sm:text-lg [&::-webkit-details-marker]:hidden">
                   {f.q}
-                  <ChevronDown className="w-5 h-5 text-primary shrink-0 transition-transform group-open:rotate-180" aria-hidden="true" />
+                  <Plus className="w-5 h-5 shrink-0 text-ink-soft transition-transform group-open:rotate-45" aria-hidden="true" />
                 </summary>
-                <p className="px-5 pb-5 -mt-1 text-sm text-slate-600 leading-relaxed">{f.a}</p>
+                <p className="pb-6 pr-8 -mt-1 leading-relaxed text-ink-soft">{f.a}</p>
               </details>
             ))}
           </div>
         </Container>
       </section>
-
-      {/* 8. Banner CTA */}
-      <section className="pt-8">
-        <Container>
-          <div className="on-purple relative overflow-hidden bg-brand-navy rounded-3xl p-10 sm:p-16 text-center">
-            <div aria-hidden="true" className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-accent/15 blur-[80px]" />
-            <div aria-hidden="true" className="absolute -bottom-24 -right-24 w-72 h-72 rounded-full bg-accent/15 blur-[80px]" />
-            <div className="relative">
-              <Eyebrow onPurple>Gratis Konsultasi 24/7</Eyebrow>
-              <h2 className="mt-5 text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">Siap Pindah ke Kost yang Lebih Nyaman?</h2>
-              <p className="mt-4 max-w-2xl mx-auto text-base sm:text-lg leading-relaxed text-white">
-                Pilih kamar hari ini, bayar dari dashboard, dan tim Brave siapkan kamar Anda. Ada pertanyaan? Tanya kami lewat WhatsApp.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-                <a href="#katalog" className={button("accent", "lg")}>
-                  Lihat Kamar Tersedia <ArrowUp className="w-4 h-4" aria-hidden="true" />
-                </a>
-                <a href={waKost()} target="_blank" rel="noopener noreferrer" className={button("glass", "lg", "animate-pulse-glow")}>
-                  <MessageCircle className="w-4 h-4" aria-hidden="true" /> Chat via WhatsApp{NEW_TAB}
-                </a>
-              </div>
-            </div>
-          </div>
-        </Container>
-      </section>
-    </>
+    </div>
   );
 }

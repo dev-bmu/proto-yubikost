@@ -5,6 +5,7 @@ import { BookingCard, KostPickCard, PageHeader, StepHeading } from "@/components
 import { RoomPicker, SewaSteps, type TypeOption } from "@/components/customer/RoomPicker";
 import { FacilityChips, Photo } from "@/components/media";
 import { button, card, kostTypeClass, Notice, Pill } from "@/components/ui";
+import { HOLD_HOURS } from "@/lib/constants";
 import { customerGuard } from "@/lib/customer-guard";
 import { all, byId } from "@/lib/db";
 import { cn, rupiah } from "@/lib/format";
@@ -36,9 +37,14 @@ export default async function SewaPage({ searchParams }: { searchParams: Promise
 
   if (ctx.booking) {
     const typeName = ctx.booking.room && byId("roomTypes", ctx.booking.room.typeId)?.name;
+    // Pembatalan mandiri hanya sebelum uang muka dibayar; setelahnya lewat Customer Care.
+    const canCancel = ctx.booking.stage === "DP" && ctx.booking.status === "MENUNGGU_PEMBAYARAN";
     return (
       <div className="space-y-6">
-        <PageHeader icon={BedDouble} title="Sewa Kamar">Anda sudah punya pesanan aktif. Selesaikan pembayaran atau batalkan pesanan untuk memilih kamar lain.</PageHeader>
+        <PageHeader icon={BedDouble} title="Sewa Kamar">
+          Anda sudah punya pesanan aktif. Selesaikan pembayaran di menu Pembayaran
+          {canCancel ? ", atau batalkan pesanan untuk memilih kamar lain." : "; pembatalan diajukan lewat Customer Care."}
+        </PageHeader>
         <BookingCard booking={ctx.booking} typeName={typeName}>
           <Link href="/dashboard/pembayaran" className={button("primary", "lg", "mt-5 w-full sm:w-auto")}>
             <CreditCard className="w-5 h-5" aria-hidden="true" /> Ke Pembayaran
@@ -83,7 +89,7 @@ export default async function SewaPage({ searchParams }: { searchParams: Promise
   return (
     <div className="space-y-8">
       <PageHeader icon={BedDouble} title="Sewa Kamar">
-        Pilih gedung, tipe kamar, lalu nomor kamar yang tersedia. Kamar ditahan untuk Anda setelah mengajukan sewa.
+        Pilih gedung, tipe kamar, lalu nomor kamar yang tersedia. Setelah mengajukan sewa, kamar ditahan {HOLD_HOURS} jam untuk pembayaran uang muka.
       </PageHeader>
 
       <SewaSteps hasKost={Boolean(selected)} />

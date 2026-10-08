@@ -1,10 +1,11 @@
 // Syarat & Ketentuan (PRD G-04, C-08). Draf prototype — perlu ditinjau Legal.
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { LegalArticle, LegalContact } from "@/components/catalog/LegalArticle";
-import { DEPOSIT, HOLD_HOURS, MIN_CONTRACT, PACKAGES } from "@/lib/constants";
+import { DEPOSIT, DP_TERMS, HOLD_HOURS, MIN_CONTRACT, PACKAGES } from "@/lib/constants";
 
 export const metadata: Metadata = { title: "Syarat & Ketentuan" };
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 export default function TermsPage() {
   return (
@@ -45,10 +46,13 @@ export default function TermsPage() {
 
       <h2>4. Pemesanan & Pembayaran</h2>
       <ul>
-        <li>Paket sewa tersedia {PACKAGES.join(", ")} bulan. Tagihan pertama terdiri dari sewa sesuai paket ditambah deposit {DEPOSIT} sewa.</li>
+        <li>Paket sewa tersedia {PACKAGES.join(", ")} bulan. Pemesanan dilakukan dengan membayar uang muka dari total sewa paket; sisa sewa dan deposit {DEPOSIT} dilunasi saat check-in.</li>
+        {DP_TERMS.map((t) => (
+          <li key={t}>{t}</li>
+        ))}
         <li>
-          Kamar ditahan {HOLD_HOURS} jam sejak pesanan dibuat. Bila bukti pembayaran belum diunggah sampai batas waktu, pesanan kedaluwarsa dan kamar
-          dilepas.
+          Kamar ditahan {HOLD_HOURS} jam sejak pesanan dibuat untuk pembayaran uang muka. Bila bukti uang muka belum diunggah sampai batas waktu, atau
+          pelunasan belum dibayar sampai masa berlaku uang muka habis, pesanan kedaluwarsa dan kamar dilepas.
         </li>
         <li>Pembayaran dianggap sah setelah bukti diverifikasi tim Finance. Bukti yang ditolak dapat diunggah ulang sesuai alasan penolakan.</li>
         <li>Pembayaran hanya ke rekening atau QRIS resmi yang tampil di Dashboard. Kami tidak pernah meminta transfer ke rekening pribadi.</li>

@@ -1,5 +1,5 @@
 "use client";
-// Verifikasi bukti pembayaran (PRD §9.7, v1.1): Setujui / Tolak, dan batalkan pesanan belum dibayar.
+// Verifikasi bukti pembayaran (Finance → Konfirmasi Pembayaran): Setujui / Tolak, dan batalkan pesanan belum dibayar.
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CircleCheck, CircleX, XCircle } from "lucide-react";
@@ -11,19 +11,28 @@ import { rupiah } from "@/lib/format";
 
 const TOUCH = "min-h-11 sm:min-h-9";
 
+/** Efek penolakan per tahap (sama dengan rejectPayment di server). */
+const REJECT_HINT = {
+  dp: "Ditampilkan ke customer. Customer bisa upload ulang bukti uang muka dalam 24 jam; kamar tetap ditahan.",
+  pelunasan: "Ditampilkan ke customer. Customer upload ulang sebelum masa berlaku uang muka habis (minimal 24 jam dari sekarang).",
+  perpanjangan: "Ditampilkan ke customer. Faktur perpanjangan dibatalkan; customer mengajukan perpanjangan ulang.",
+};
+
 export function PaymentActions({
   id,
   name,
+  kind,
   kindLabel,
   amount,
   effect,
 }: {
   id: string;
   name: string;
+  kind: keyof typeof REJECT_HINT;
   kindLabel: string;
   amount: number;
-  /** Penjelasan efek persetujuan, mis. "Sewa aktif 15 Okt 2026 – 15 Jan 2027, akun jadi Penghuni" */
-  effect: string;
+  /** Efek persetujuan (dihitung server), mis. "Kamar A-03 ditahan sampai 18 Okt 2026." */
+  effect: string[];
 }) {
   const router = useRouter();
   const [dialog, setDialog] = useState<"approve" | "reject" | null>(null);
@@ -37,14 +46,14 @@ export function PaymentActions({
     setError(null);
   };
   const close = () => setDialog(null);
-  // Baris hilang dari tab Menunggu setelah aksi, jadi hasil ditampilkan halaman lewat ?done=<id>.
-  const finish = () => router.push(`/admin/pembayaran?done=${id}`);
+  // Baris hilang dari tab Menunggu setelah aksi, jadi hasil ditampilkan halaman lewat ?done=<id> (&due=<tanggal hasil>).
+  const finish = (due = "") => router.push(`/admin/finance/konfirmasi?done=${id}${due ? `&due=${due}` : ""}`);
 
   async function approve() {
     setPending(true);
     setError(null);
     const r = await approvePayment(id);
-    if (r.ok) return finish();
+    if (r.ok) return finish(r.dueDate);
     setPending(false);
     setError({ text: r.error });
   }
@@ -75,7 +84,7 @@ export function PaymentActions({
 
   return (
     <>
-      <div className="flex flex-wrap gap-2">
+      <div className="flex gap-2">
         <button type="button" className={button("primary", "sm", TOUCH)} onClick={() => open("approve")} aria-label={`Setujui pembayaran ${name}`}>
           <CircleCheck className="w-4 h-4" aria-hidden="true" /> Setujui
         </button>
@@ -84,10 +93,18 @@ export function PaymentActions({
         </button>
       </div>
 
-      <Modal open={dialog === "approve"} onClose={close} title="Setujui Pembayaran" subtitle="Pastikan nominal sudah masuk di mutasi rekening." icon={<CircleCheck className="w-4 h-4" />} size="sm">
+      <Modal open={dialog === "approve"} onClose={close} title={`Setujui ${kindLabel}`} subtitle="Pastikan nominal sudah masuk di mutasi rekening." icon={<CircleCheck className="w-4 h-4" />} size="sm">
         <div className="p-5 space-y-4">
           {summary}
-          <p className="text-sm text-slate-700">{effect}</p>
+          <div className="text-sm text-slate-700">
+            <p className="font-semibold text-slate-900">Setelah disetujui:</p>
+            <ul className="mt-1.5 list-disc pl-5 space-y-1">
+              {effect.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+              <li>Nomor penerimaan (RCP) dibuat otomatis dan status faktur diperbarui.</li>
+            </ul>
+          </div>
           {generalError}
           <div className="flex flex-col-reverse sm:flex-row gap-2">
             <button type="button" className={button("neutral", "md", "sm:flex-1")} onClick={close}>Batal</button>
@@ -108,7 +125,7 @@ export function PaymentActions({
             value={reason}
             onChange={(e) => setReason(e.target.value)}
             placeholder="Contoh: Nominal transfer kurang Rp100.000"
-            hint="Ditampilkan ke customer. Untuk sewa baru, customer bisa upload ulang dalam 24 jam."
+            hint={REJECT_HINT[kind]}
             error={error?.field === "reason" ? error.text : undefined}
           />
           {generalError}
@@ -124,7 +141,7 @@ export function PaymentActions({
   );
 }
 
-export function CancelBookingAdminButton({ id, name }: { id: string; name: string }) {
+export function CancelBookingAdminButton({ id, name, stage }: { id: string; name: string; stage: string }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -147,7 +164,11 @@ export function CancelBookingAdminButton({ id, name }: { id: string; name: strin
       </button>
       <Modal open={open} onClose={() => setOpen(false)} title="Batalkan pesanan?" subtitle={name} icon={<XCircle className="w-4 h-4" />} size="sm">
         <div className="p-5 space-y-4">
-          <p className="text-sm text-slate-700">Pesanan dibatalkan dan kamar kembali Tersedia. Tercatat di audit log.</p>
+          <p className="text-sm text-slate-700">
+            {stage === "PELUNASAN" &&
+              "Uang muka sudah dibayar; refund mengikuti ketentuan (100% bila pembatalan ≤ 3 hari sejak bayar, 50% bila ≤ 8 hari). "}
+            Pesanan dan fakturnya dibatalkan, kamar kembali Tersedia. Tercatat di audit log.
+          </p>
           {error && (
             <Notice tone="danger">
               <span role="alert">{error}</span>

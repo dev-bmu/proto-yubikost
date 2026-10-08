@@ -17,6 +17,8 @@ export type ChannelItem = {
   qrisImage: string;
   isActive: boolean;
   sortOrder: number;
+  /** Kode akun Kas/Bank di Accurate (kolom EXPENSE ACCOUNT NO saat impor penerimaan). */
+  accurateAccount: string;
 };
 
 type Form = Omit<ChannelItem, "id" | "sortOrder"> & { id?: string; sortOrder: string };
@@ -34,10 +36,10 @@ export function ChannelManager({ channels }: { channels: ChannelItem[] }) {
     setForm(
       c
         ? { ...c, sortOrder: String(c.sortOrder) }
-        : { label: "", accountNumber: "", accountHolder: "", qrisImage: "", isActive: true, sortOrder: String(nextOrder) },
+        : { label: "", accountNumber: "", accountHolder: "", qrisImage: "", isActive: true, sortOrder: String(nextOrder), accurateAccount: "" },
     );
   };
-  const set = (k: "label" | "accountNumber" | "accountHolder" | "qrisImage" | "sortOrder") => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const set = (k: "label" | "accountNumber" | "accountHolder" | "qrisImage" | "sortOrder" | "accurateAccount") => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => f && { ...f, [k]: e.target.value });
   const fieldError = (f: string) => (error?.field === f ? error.text : undefined);
 
@@ -82,6 +84,7 @@ export function ChannelManager({ channels }: { channels: ChannelItem[] }) {
             <th scope="col" className={th}>Nomor rekening</th>
             <th scope="col" className={th}>Atas nama</th>
             <th scope="col" className={th}>QRIS</th>
+            <th scope="col" className={th}>Akun Accurate</th>
             <th scope="col" className={th}>Status</th>
             <th scope="col" className={th}><span className="sr-only">Aksi</span></th>
           </tr>
@@ -102,6 +105,7 @@ export function ChannelManager({ channels }: { channels: ChannelItem[] }) {
                   "-"
                 )}
               </td>
+              <td className={`${td} font-mono tabular-nums`}>{c.accurateAccount || <span className="font-sans text-amber-700">Belum diisi</span>}</td>
               <td className={td}>{c.isActive ? <Pill tone="success">Aktif</Pill> : <Pill tone="neutral">Nonaktif</Pill>}</td>
               <td className={td}>
                 <div className="flex justify-end gap-2">
@@ -122,7 +126,7 @@ export function ChannelManager({ channels }: { channels: ChannelItem[] }) {
           ))}
           {!channels.length && (
             <tr>
-              <td colSpan={7} className={`${td} text-center py-10 text-slate-500`}>Belum ada rekening atau QRIS.</td>
+              <td colSpan={8} className={`${td} text-center py-10 text-slate-500`}>Belum ada rekening atau QRIS.</td>
             </tr>
           )}
         </tbody>
@@ -148,6 +152,13 @@ export function ChannelManager({ channels }: { channels: ChannelItem[] }) {
               onChange={set("qrisImage")}
               placeholder="/qris-dummy.svg"
               hint="Prototype memakai URL; produksi memakai unggah gambar."
+            />
+            <Input
+              label="Kode akun Kas/Bank di Accurate"
+              value={form.accurateAccount}
+              onChange={set("accurateAccount")}
+              placeholder="110101"
+              hint="Dipakai kolom EXPENSE ACCOUNT NO saat ekspor penerimaan penjualan. Harus sama persis dengan kode akun di Accurate."
             />
             {form.qrisImage && (
               // eslint-disable-next-line @next/next/no-img-element

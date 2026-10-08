@@ -1,10 +1,11 @@
 // Kebijakan Privasi sesuai UU No. 27/2022 PDP (PRD SEC-06, SEC-07). Draf prototype — perlu ditinjau Legal.
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import { LegalArticle, LegalContact } from "@/components/catalog/LegalArticle";
 import { maskNik } from "@/lib/format";
 
 export const metadata: Metadata = { title: "Kebijakan Privasi" };
+export const viewport: Viewport = { themeColor: "#ffffff" };
 
 const DATA = [
   { group: "Data akun", items: "Nama lengkap, Nomor WhatsApp, email (opsional), dan kata sandi (disimpan dalam bentuk hash)." },

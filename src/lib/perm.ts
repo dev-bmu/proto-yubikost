@@ -10,6 +10,8 @@ export type Permission =
   | "lease.end"
   | "renewals.verify"
   | "payments.verify"
+  | "finance.view"
+  | "finance.export"
   | "residents.ktp"
   | "channels.manage"
   | "members.reset"
@@ -23,6 +25,9 @@ const MATRIX: Record<Permission, AdminRole[]> = {
   "lease.end": ["SUPER_ADMIN", "MANAGER", "OPERATIONAL"],
   "renewals.verify": ["SUPER_ADMIN", "MANAGER", "FINANCE"],
   "payments.verify": ["SUPER_ADMIN", "MANAGER", "FINANCE"],
+  // Menu Finance (konfirmasi & data transaksi). Operasional ikut melihat untuk membatalkan pesanan yang tidak dibayar.
+  "finance.view": ["SUPER_ADMIN", "MANAGER", "FINANCE", "OPERATIONAL"],
+  "finance.export": ["SUPER_ADMIN", "MANAGER", "FINANCE"],
   "residents.ktp": ["SUPER_ADMIN", "MANAGER", "OPERATIONAL", "LEGAL"],
   "channels.manage": ["SUPER_ADMIN", "FINANCE"],
   "members.reset": ["SUPER_ADMIN", "MANAGER", "OPERATIONAL"],

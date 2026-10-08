@@ -3,15 +3,19 @@ import {
   all, byId, nowIso, update,
   type Booking, type Channel, type Inquiry, type Kost, type Lease, type Member, type Payment, type Profile, type Room,
 } from "./db";
+import { bookingDue, cancelInvoice } from "./finance";
+import { bookingStatusLabel } from "./constants";
 
 /**
- * Pesanan MENUNGGU_PEMBAYARAN yang lewat batas bayar → KEDALUWARSA, kamar dilepas (PRD §8, K-16).
+ * Pesanan MENUNGGU_PEMBAYARAN yang lewat batas → KEDALUWARSA, kamar dilepas, faktur batal (PRD §8, K-16).
+ * Tahap DP: uang muka tidak dibayar dalam 24 jam. Tahap PELUNASAN: masa berlaku uang muka habis (uang muka hangus).
  * ponytail: dijalankan saat data kamar/pesanan dibaca (lazy); produksi pakai cron.
  */
 export function expireBookings() {
   const now = nowIso();
   for (const b of all("bookings").filter((b) => b.status === "MENUNGGU_PEMBAYARAN" && b.expiresAt < now)) {
     update("bookings", b.id, { status: "KEDALUWARSA", updatedAt: now });
+    cancelInvoice(b.invoiceId, b.stage === "PELUNASAN" ? "Masa berlaku uang muka habis sebelum pelunasan" : "Uang muka tidak dibayar sampai batas waktu");
     const room = byId("rooms", b.roomId);
     if (room?.status === "RESERVED") update("rooms", room.id, { status: "AVAILABLE" });
   }
@@ -148,7 +152,7 @@ export function customerContext(memberId: string) {
 
   const resident = residentContext(memberId);
   const bookingRow = activeBookingOfMember(memberId);
-  const booking = bookingRow && { ...bookingRow, ...place(bookingRow.roomId) };
+  const booking = bookingRow && { ...bookingRow, ...place(bookingRow.roomId), ...bookingDue(bookingRow) };
   const myBookings = all("bookings").filter((b) => b.memberId === memberId);
   const leaseRoom = new Map(all("leases").filter((l) => l.memberId === memberId).map((l) => [l.id, l.roomId]));
 
@@ -220,7 +224,7 @@ export function leadsList(): LeadRow[] {
         kost: kostId ? kosts.find((k) => k.id === kostId) : undefined,
         room: roomId ? rooms.find((r) => r.id === roomId) : undefined,
         statusLabel: booking
-          ? booking.status === "MENUNGGU_PEMBAYARAN" ? "Menunggu Pembayaran" : "Menunggu Verifikasi"
+          ? bookingStatusLabel(booking)
           : inquiry ? INQUIRY_STATUS_LABEL[inquiry.status] ?? inquiry.status : "Terdaftar",
         lastActivity: [booking?.updatedAt, inquiry?.updatedAt, member.createdAt].filter(Boolean).sort().pop()!,
       };
@@ -265,63 +269,6 @@ export function residentDetail(memberId: string) {
     leases,
     payments: all("payments").filter((p) => p.memberId === memberId).sort((a, b) => b.createdAt.localeCompare(a.createdAt)),
   };
-}
-
-export type PaymentRow = {
-  payment: Payment;
-  member: Member;
-  room?: Room;
-  kost?: Kost;
-  booking?: Booking;
-  lease?: Lease;
-  channelLabel: string;
-};
-
-/** Antrean & riwayat pembayaran untuk admin (PRD §9.7). */
-export function paymentsList(): PaymentRow[] {
-  const members = all("members");
-  const rooms = all("rooms");
-  const kosts = all("kosts");
-  const bookings = all("bookings");
-  const leases = all("leases");
-  const channels = all("channels");
-  return all("payments")
-    .flatMap((payment) => {
-      const member = members.find((m) => m.id === payment.memberId);
-      if (!member) return [];
-      const booking = bookings.find((b) => b.id === payment.bookingId);
-      const lease = leases.find((l) => l.id === payment.leaseId);
-      const room = rooms.find((r) => r.id === (booking?.roomId ?? lease?.roomId));
-      return [{
-        payment,
-        member,
-        room,
-        kost: room && kosts.find((k) => k.id === room.kostId),
-        booking,
-        lease,
-        channelLabel: channels.find((c) => c.id === payment.channelId)?.label ?? "-",
-      }];
-    })
-    .sort((a, b) => b.payment.createdAt.localeCompare(a.payment.createdAt));
-}
-
-export type UnpaidBookingRow = { booking: Booking; member: Member; room?: Room; kost?: Kost };
-
-/** Pesanan yang belum mengirim bukti (tab "Menunggu Pembayaran"). */
-export function unpaidBookings(): UnpaidBookingRow[] {
-  expireBookings();
-  const members = all("members");
-  const rooms = all("rooms");
-  const kosts = all("kosts");
-  return all("bookings")
-    .filter((b) => b.status === "MENUNGGU_PEMBAYARAN")
-    .flatMap((booking) => {
-      const member = members.find((m) => m.id === booking.memberId);
-      if (!member) return [];
-      const room = rooms.find((r) => r.id === booking.roomId);
-      return [{ booking, member, room, kost: room && kosts.find((k) => k.id === room.kostId) }];
-    })
-    .sort((a, b) => a.booking.expiresAt.localeCompare(b.booking.expiresAt));
 }
 
 export type RoomRow = Room & { lease?: Lease; member?: Member; booking?: Booking };

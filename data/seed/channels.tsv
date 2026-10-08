@@ -1,5 +1,5 @@
-id	label	accountNumber	accountHolder	qrisImage	isActive	sortOrder
-ch-bca	BCA	1234567890	Brave Brawijaya (DUMMY)		true	1
-ch-mandiri	Mandiri	1440012345678	Brave Brawijaya (DUMMY)		true	2
-ch-qris	QRIS		Brave Brawijaya (DUMMY)	/qris-dummy.svg	true	3
-ch-bri	BRI	002201000123456	Brave Brawijaya (DUMMY)		false	4
+id	label	accountNumber	accountHolder	qrisImage	isActive	sortOrder	accurateAccount
+ch-bca	BCA	1234567890	Brave Brawijaya (DUMMY)		true	1	110101
+ch-mandiri	Mandiri	1440012345678	Brave Brawijaya (DUMMY)		true	2	110102
+ch-qris	QRIS		Brave Brawijaya (DUMMY)	/qris-dummy.svg	true	3	110103
+ch-bri	BRI	002201000123456	Brave Brawijaya (DUMMY)		false	4	

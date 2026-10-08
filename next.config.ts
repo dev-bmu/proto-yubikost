@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname),
   devIndicators: false,
   // Seed TSV & spesimen dibaca lewat fs saat runtime; pastikan ikut ter-bundle ke serverless function (Vercel).
-  outputFileTracingIncludes: { "/**": ["./data/seed/**", "./data/seed-ktp/**", "./data/seed-bukti/**"] },
+  outputFileTracingIncludes: { "/**": ["./data/seed/**", "./data/seed-ktp/**", "./data/seed-bukti/**", "./data/accurate/**"] },
   // Rute lama sebelum Dashboard Customer (v1.1)
   async redirects() {
     return [
@@ -13,13 +13,15 @@ const nextConfig: NextConfig = {
       { source: "/portal/biodata", destination: "/dashboard/biodata", permanent: false },
       { source: "/portal/pembayaran", destination: "/dashboard/pembayaran", permanent: false },
       { source: "/akun/kata-sandi", destination: "/dashboard/akun", permanent: false },
-      { source: "/admin/perpanjangan", destination: "/admin/pembayaran", permanent: false },
+      { source: "/admin/perpanjangan", destination: "/admin/finance/konfirmasi", permanent: false },
       // v1.2: home = katalog kost; Advertising & Layanan Properti dihapus; kelola kamar pindah ke subpage Kost
       { source: "/kost", destination: "/", permanent: false },
       { source: "/advertising/:path*", destination: "/", permanent: false },
       { source: "/properti/:path*", destination: "/", permanent: false },
       { source: "/admin/kamar", destination: "/admin/kost", permanent: false },
       { source: "/admin/katalog", destination: "/admin/kost", permanent: false },
+      // v1.3: menu Pembayaran menjadi Finance (konfirmasi, data transaksi, ekspor Accurate)
+      { source: "/admin/pembayaran", destination: "/admin/finance/konfirmasi", permanent: false },
     ];
   },
   images: {

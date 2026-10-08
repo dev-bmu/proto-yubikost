@@ -1,11 +1,15 @@
 "use client";
-// Hitung mundur batas bayar (C-20): diperbarui per menit, diumumkan sopan ke pembaca layar.
+// Hitung mundur batas waktu pesanan (C-20): diperbarui berkala, diumumkan sopan ke pembaca layar.
+// Uang muka: 24 jam (jam : menit). Pelunasan: masa berlaku uang muka (hari : jam).
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Hourglass } from "lucide-react";
 import { HOLD_HOURS } from "@/lib/constants";
 
-export function Countdown({ expiresAt, deadline }: { expiresAt: string; deadline: string }) {
+/** label + deadline = "Bayar uang muka sebelum 9 Okt 2026, 10.20". hours = panjang jendela waktu untuk bar progres. */
+export function Countdown({
+  expiresAt, deadline, label, note, hours = HOLD_HOURS,
+}: { expiresAt: string; deadline: string; label: string; note: string; hours?: number }) {
   const router = useRouter();
   const [left, setLeft] = useState<number | null>(null);
 
@@ -22,7 +26,13 @@ export function Countdown({ expiresAt, deadline }: { expiresAt: string; deadline
   useEffect(() => {
     if (expired) router.refresh();
   }, [expired, router]);
-  const pct = left === null ? 100 : Math.min(100, (left / (HOLD_HOURS * 3_600_000)) * 100);
+  const pct = left === null ? 100 : Math.min(100, (left / (hours * 3_600_000)) * 100);
+  // > 24 jam: hari & jam (masa berlaku uang muka); selebihnya jam & menit (batas bayar uang muka 24 jam).
+  const units: [number, string][] = !mins
+    ? []
+    : mins > 1440
+      ? [[Math.floor(mins / 1440), "hari"], [Math.floor((mins % 1440) / 60), "jam"]]
+      : [[Math.floor(mins / 60), "jam"], [mins % 60, "menit"]];
 
   return (
     <div className="rounded-2xl bg-amber-50 border border-amber-200 p-4">
@@ -30,8 +40,8 @@ export function Countdown({ expiresAt, deadline }: { expiresAt: string; deadline
         <p className="flex items-start gap-2 text-sm text-amber-900">
           <Hourglass className="w-5 h-5 shrink-0 text-amber-700" aria-hidden="true" />
           <span>
-            Bayar sebelum <strong className="font-bold">{deadline}</strong>
-            <span className="block text-xs">Lewat batas, pesanan batal otomatis dan kamar dilepas.</span>
+            {label} <strong className="font-bold">{deadline}</strong>
+            <span className="block text-xs">{note}</span>
           </span>
         </p>
         <p aria-live="polite" className="flex items-center gap-1.5 text-amber-900 tabular-nums">
@@ -41,10 +51,10 @@ export function Countdown({ expiresAt, deadline }: { expiresAt: string; deadline
             <span className="text-sm font-bold">Waktu pembayaran habis</span>
           ) : (
             <>
-              <span className="sr-only">Sisa waktu {Math.floor(mins / 60)} jam {mins % 60} menit</span>
-              <TimeBox value={Math.floor(mins / 60)} unit="jam" />
+              <span className="sr-only">Sisa waktu {units.map(([v, u]) => `${v} ${u}`).join(" ")}</span>
+              <TimeBox value={units[0][0]} unit={units[0][1]} />
               <span className="text-lg font-extrabold" aria-hidden="true">:</span>
-              <TimeBox value={mins % 60} unit="menit" />
+              <TimeBox value={units[1][0]} unit={units[1][1]} />
             </>
           )}
         </p>

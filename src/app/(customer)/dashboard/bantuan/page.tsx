@@ -2,7 +2,7 @@
 import { ArrowUpRight, BedDouble, Building2, ChevronDown, Headset, MessageCircle, Phone, Wallet, type LucideIcon } from "lucide-react";
 import { PageHeader } from "@/components/customer/parts";
 import { card } from "@/components/ui";
-import { DEPOSIT_MONTHS, HOLD_HOURS } from "@/lib/constants";
+import { DEPOSIT, DP_TERMS, DP_TIERS, HOLD_HOURS } from "@/lib/constants";
 import { customerGuard } from "@/lib/customer-guard";
 import { cn, formatPhone } from "@/lib/format";
 import { CC_TOPICS, WA, waCustomerCare, waKost, type CcTopic } from "@/lib/wa";
@@ -11,14 +11,24 @@ export const metadata = { title: "Bantuan" };
 
 const TOPIC: Record<CcTopic, { title: string; desc: string; icon: LucideIcon; tile: string }> = {
   sewa: { title: "Sewa", desc: "Pemesanan kamar, masa sewa, check-in, atau pindah kamar.", icon: BedDouble, tile: "bg-primary/10 text-primary" },
-  pembayaran: { title: "Pembayaran", desc: "Tagihan, transfer, bukti pembayaran, atau deposit.", icon: Wallet, tile: "bg-emerald-100 text-emerald-700" },
+  pembayaran: { title: "Pembayaran", desc: "Uang muka, pelunasan, bukti transfer, atau deposit.", icon: Wallet, tile: "bg-emerald-100 text-emerald-700" },
   "informasi kost": { title: "Informasi Kost", desc: "Fasilitas, tata tertib, lokasi, atau perubahan biodata.", icon: Building2, tile: "bg-sky-100 text-sky-700" },
 };
 
 const FAQ = [
   { q: "Berapa lama verifikasi pembayaran?", a: "Maksimal 1 hari kerja setelah bukti transfer terkirim. Status dapat dipantau di menu Pembayaran." },
-  { q: "Berapa lama kamar ditahan setelah mengajukan sewa?", a: `${HOLD_HOURS} jam sejak pesanan dibuat. Lewat batas waktu tanpa bukti pembayaran, pesanan batal otomatis dan kamar dilepas.` },
-  { q: "Apa saja yang dibayar di tagihan pertama?", a: `Sewa sesuai paket (1, 3, 6, atau 12 bulan) ditambah deposit ${DEPOSIT_MONTHS} bulan. Deposit dikembalikan saat masa sewa berakhir sesuai tata tertib.` },
+  {
+    q: "Berapa lama kamar ditahan setelah mengajukan sewa?",
+    a: `${HOLD_HOURS} jam untuk membayar uang muka. Setelah uang muka diverifikasi, kamar ditahan sampai masa berlaku uang muka habis dan tanggal check-in harus masih di dalamnya. Lewat batas waktu, pesanan batal otomatis dan kamar dilepas.`,
+  },
+  {
+    q: "Apa saja yang dibayar saat menyewa?",
+    a: `Saat mengajukan sewa, bayar uang muka minimal ${DP_TIERS[0].pct}% dari total sewa paket (1, 3, 6, atau 12 bulan). Masa berlaku uang muka sejak dibayar: ${DP_TIERS.map((t) => `${t.pct}% berlaku ${t.days} hari`).join(", ")}. Sisa sewa ditambah deposit ${DEPOSIT} dilunasi saat check-in. Deposit kembali setelah masa sewa berakhir bila barang lengkap dan tidak rusak.`,
+  },
+  {
+    q: "Bagaimana jika saya membatalkan setelah membayar uang muka?",
+    a: `Ajukan pembatalan lewat Customer Care. ${DP_TERMS.find((t) => t.startsWith("Refund")) ?? ""}`,
+  },
   { q: "Bukti pembayaran saya ditolak, lalu bagaimana?", a: "Alasan penolakan tampil di menu Pembayaran. Transfer ulang bila perlu, lalu upload bukti yang benar." },
   { q: "Bagaimana cara memperpanjang sewa?", a: "Buka menu Pembayaran, pilih paket perpanjangan, transfer, lalu upload bukti. Masa sewa bertambah setelah admin menyetujui." },
   { q: "Bisakah saya survey lokasi sebelum menyewa?", a: "Bisa. Di halaman Sewa Kamar, pilih kamar lalu tekan Ajukan Survey Lokasi untuk menjadwalkan lewat WhatsApp." },

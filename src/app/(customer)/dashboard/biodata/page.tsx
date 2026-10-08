@@ -23,7 +23,7 @@ export default async function BiodataPage() {
         <PageHeader icon={IdCard} title="Lengkapi Biodata">
           Selamat, sewa Kamar {resident.room.number} · {resident.kost.name} sudah aktif. Biodata wajib diisi sekali sebelum memakai menu penghuni.
         </PageHeader>
-        <ProgressSteps current={3} />
+        <ProgressSteps current={4} />
         <div className="grid xl:grid-cols-[minmax(0,1fr)_300px] gap-8 items-start">
           <div className={card(false, "p-6 sm:p-8")}>
             <BiodataForm />

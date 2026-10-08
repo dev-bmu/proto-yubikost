@@ -45,9 +45,10 @@ export const schemas = {
     id: "s", kostId: "s", typeId: "s", number: "s", floor: "s", size: "s", monthlyPrice: "n",
     facilities: "l", photos: "l", status: "s", createdAt: "s",
   },
+  // customerNo = ID Pelanggan Accurate (diberikan saat faktur pertama). accurateExportedAt = terakhir diekspor ke Accurate.
   members: {
     id: "s", name: "s", whatsapp: "s", email: "s", password: "s", role: "s",
-    mustChangePassword: "b", source: "s", consentAt: "s", createdAt: "s",
+    mustChangePassword: "b", source: "s", consentAt: "s", createdAt: "s", customerNo: "s", accurateExportedAt: "s",
   },
   leases: {
     id: "s", memberId: "s", roomId: "s", startDate: "s", dueDate: "s", status: "s",
@@ -62,19 +63,31 @@ export const schemas = {
     id: "s", memberId: "s", kostId: "s", roomId: "s", status: "s", notes: "s",
     createdAt: "s", updatedAt: "s",
   },
-  // Pesanan sewa dari Dashboard Customer. status: MENUNGGU_PEMBAYARAN | MENUNGGU_VERIFIKASI | DISETUJUI | DIBATALKAN | KEDALUWARSA
+  // Pesanan sewa dari Dashboard Customer. startDate = tanggal check-in. stage: DP (uang muka) → PELUNASAN (sisa sewa + deposit).
+  // status (per tahap): MENUNGGU_PEMBAYARAN | MENUNGGU_VERIFIKASI → DISETUJUI (lunas, jadi penghuni) | DIBATALKAN | KEDALUWARSA.
+  // expiresAt: tahap DP = batas bayar uang muka (24 jam); tahap PELUNASAN = akhir masa berlaku uang muka.
   bookings: {
     id: "s", memberId: "s", kostId: "s", roomId: "s", startDate: "s", months: "n", status: "s",
     expiresAt: "s", leaseId: "s", note: "s", createdAt: "s", updatedAt: "s",
+    stage: "s", dpPct: "n", monthlyPrice: "n", invoiceId: "s",
   },
-  // Bukti pembayaran. kind: SEWA_BARU | PERPANJANGAN. status: MENUNGGU_VERIFIKASI | DISETUJUI | DITOLAK
+  // Bukti pembayaran. kind: SEWA_BARU | PERPANJANGAN. stage (sewa baru): DP | PELUNASAN.
+  // status: MENUNGGU_VERIFIKASI | DISETUJUI | DITOLAK. receiptNo = nomor penerimaan Accurate, diberikan saat disetujui.
   payments: {
     id: "s", kind: "s", memberId: "s", bookingId: "s", leaseId: "s", months: "n", amount: "n",
     channelId: "s", proofKey: "s", status: "s", note: "s", verifiedBy: "s", verifiedAt: "s", createdAt: "s",
+    stage: "s", invoiceId: "s", receiptNo: "s", exportedAt: "s",
   },
+  // Faktur penjualan (Accurate). Sewa baru: dibuat saat pesanan; perpanjangan: saat bukti dikirim.
+  // status: BELUM_LUNAS | SEBAGIAN | LUNAS | BATAL. date = tanggal faktur (YYYY-MM-DD).
+  invoices: {
+    id: "s", number: "s", memberId: "s", kind: "s", bookingId: "s", leaseId: "s", roomId: "s", date: "s", dueDate: "s",
+    months: "n", monthlyPrice: "n", rent: "n", deposit: "n", total: "n", status: "s", note: "s", exportedAt: "s", createdAt: "s",
+  },
+  // accurateAccount = kode akun Kas/Bank di Accurate untuk impor penerimaan penjualan.
   channels: {
     id: "s", label: "s", accountNumber: "s", accountHolder: "s", qrisImage: "s",
-    isActive: "b", sortOrder: "n",
+    isActive: "b", sortOrder: "n", accurateAccount: "s",
   },
   admins: { id: "s", name: "s", email: "s", password: "s", role: "s" },
   testimonials: { id: "s", name: "s", content: "s", rating: "n", tag: "s" },
@@ -94,6 +107,7 @@ export type Profile = Row<"profiles">;
 export type Inquiry = Row<"inquiries">;
 export type Booking = Row<"bookings">;
 export type Payment = Row<"payments">;
+export type Invoice = Row<"invoices">;
 export type Channel = Row<"channels">;
 export type Admin = Row<"admins">;
 export type Testimonial = Row<"testimonials">;

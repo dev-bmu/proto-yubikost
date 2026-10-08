@@ -9,7 +9,8 @@ import { can, type Permission } from "@/lib/perm";
 import { activeBookingOfMember, activeLeaseOfMember, activeLeaseOfRoom } from "@/lib/queries";
 import { clearAdminSession, currentAdmin, setAdminSession } from "@/lib/session";
 import { waCredential } from "@/lib/wa";
-import { HOLD_HOURS, INQUIRY_STATUSES, PACKAGES } from "@/lib/constants";
+import { DP_TIERS, HOLD_HOURS, INQUIRY_STATUSES, PACKAGES } from "@/lib/constants";
+import { cancelInvoice, endOfDayWib, nextReceiptNumber, syncInvoice, wibDate } from "@/lib/finance";
 import type { Fail } from "./member";
 
 const fail = (error: string, field?: string, code?: string): Fail => ({ ok: false, error, field, code });
@@ -68,7 +69,7 @@ export async function assignRoom(input: {
   const member = byId("members", input.memberId);
   if (!member || member.role !== "PROSPECT") return fail("Prospect tidak ditemukan.");
   if (activeLeaseOfMember(member.id)) return fail("Prospect ini sudah punya sewa aktif.");
-  if (activeBookingOfMember(member.id)) return fail("Prospect ini punya pesanan aktif di Dashboard. Verifikasi atau batalkan di menu Pembayaran.");
+  if (activeBookingOfMember(member.id)) return fail("Prospect ini punya pesanan aktif di Dashboard. Verifikasi atau batalkan di menu Finance › Konfirmasi Pembayaran.");
   if (!isDate(input.startDate)) return fail("Tanggal mulai sewa tidak valid.", "startDate");
   if (!(PACKAGES as readonly number[]).includes(input.months)) return fail("Paket awal tidak valid.", "months");
   if (!isDate(input.dueDate) || input.dueDate <= input.startDate) return fail("Jatuh tempo harus setelah tanggal mulai.", "dueDate");
@@ -135,6 +136,8 @@ export async function directAdd(input: {
     source: "direct_add",
     consentAt: "",
     createdAt: nowIso(),
+    customerNo: "",
+    accurateExportedAt: "",
   });
   update("rooms", room.id, { status: "OCCUPIED" });
   const lease = insert("leases", {
@@ -176,6 +179,7 @@ export async function endLease(leaseId: string): Promise<{ ok: true } | Fail> {
   update("members", lease.memberId, { role: "PROSPECT" }); // K-06
   for (const p of all("payments").filter((p) => p.leaseId === lease.id && p.status === "MENUNGGU_VERIFIKASI")) {
     update("payments", p.id, { status: "DITOLAK", note: "Sewa diakhiri", verifiedBy: admin.id, verifiedAt: nowIso() });
+    cancelInvoice(p.invoiceId, "Sewa diakhiri");
   }
   audit(admin, "lease.end", lease.id);
   done();
@@ -208,10 +212,12 @@ export async function revealNik(memberId: string): Promise<{ ok: true; nik: stri
   return { ok: true, nik: profile.nik };
 }
 
-// ── Verifikasi Pembayaran (§9.7) ────────────────────────────
+// ── Verifikasi Pembayaran (§9.7, §9.10) ─────────────────────
 
 /**
- * Setujui bukti. SEWA_BARU → lease ACTIVE, member RESIDENT, kamar OCCUPIED, lead CLOSED_WON.
+ * Setujui bukti; setiap bukti yang disetujui mendapat nomor penerimaan (RCP) dan faktur dihitung ulang.
+ * Sewa baru tahap DP → pesanan masuk tahap PELUNASAN, kamar tetap ditahan sampai masa berlaku uang muka habis.
+ * Sewa baru tahap PELUNASAN → lease ACTIVE (mulai tanggal check-in), member RESIDENT, kamar OCCUPIED, lead CLOSED_WON.
  * PERPANJANGAN → jatuh tempo + paket (dihitung dari jatuh tempo lama).
  */
 export async function approvePayment(id: string): Promise<{ ok: true; dueDate: string } | Fail> {
@@ -219,7 +225,8 @@ export async function approvePayment(id: string): Promise<{ ok: true; dueDate: s
   if (isFail(admin)) return admin;
   const payment = byId("payments", id);
   if (!payment || payment.status !== "MENUNGGU_VERIFIKASI") return fail("Pembayaran tidak ditemukan atau sudah diproses.");
-  const verified = { status: "DISETUJUI", verifiedBy: admin.id, verifiedAt: nowIso() };
+  const now = nowIso();
+  const verified = { status: "DISETUJUI", verifiedBy: admin.id, verifiedAt: now, receiptNo: nextReceiptNumber(wibDate(now)) };
 
   if (payment.kind === "PERPANJANGAN") {
     const lease = byId("leases", payment.leaseId);
@@ -227,7 +234,8 @@ export async function approvePayment(id: string): Promise<{ ok: true; dueDate: s
     const dueDate = addMonths(lease.dueDate, payment.months);
     update("leases", lease.id, { dueDate });
     update("payments", id, verified);
-    audit(admin, "payment.approve", id, `Perpanjangan ${lease.dueDate} → ${dueDate}`);
+    syncInvoice(payment.invoiceId);
+    audit(admin, "payment.approve", id, `Perpanjangan ${lease.dueDate} → ${dueDate} · ${verified.receiptNo}`);
     done();
     return { ok: true, dueDate };
   }
@@ -236,6 +244,19 @@ export async function approvePayment(id: string): Promise<{ ok: true; dueDate: s
   const member = byId("members", payment.memberId);
   const room = booking && byId("rooms", booking.roomId);
   if (!booking || booking.status !== "MENUNGGU_VERIFIKASI" || !member || !room) return fail("Pesanan tidak ditemukan.");
+
+  if (booking.stage === "DP") {
+    // Uang muka berlaku N hari sejak dibayar (tanggal bukti dikirim); pelunasan + deposit paling lambat akhir masa itu.
+    const tier = DP_TIERS.find((t) => t.pct === booking.dpPct) ?? DP_TIERS[0];
+    const settleBy = endOfDayWib(wibDate(payment.createdAt), tier.days);
+    update("payments", id, verified);
+    syncInvoice(payment.invoiceId);
+    update("bookings", booking.id, { stage: "PELUNASAN", status: "MENUNGGU_PEMBAYARAN", expiresAt: settleBy, note: "", updatedAt: now });
+    audit(admin, "payment.approve", id, `Uang muka ${booking.dpPct}% ${member.name} · kamar ${room.number} ditahan s/d ${wibDate(settleBy)} · ${verified.receiptNo}`);
+    done();
+    return { ok: true, dueDate: wibDate(settleBy) };
+  }
+
   if (activeLeaseOfMember(member.id)) return fail("Customer ini sudah punya sewa aktif.");
   if (room.status === "OCCUPIED" || activeLeaseOfRoom(room.id)) return fail("Kamar sudah terisi. Tolak bukti dan hubungi customer.");
   const dueDate = addMonths(booking.startDate, booking.months);
@@ -248,21 +269,26 @@ export async function approvePayment(id: string): Promise<{ ok: true; dueDate: s
     status: "ACTIVE",
     createdBy: admin.id,
     endedAt: "",
-    createdAt: nowIso(),
+    createdAt: now,
   });
   update("rooms", room.id, { status: "OCCUPIED" });
   update("members", member.id, { role: "RESIDENT" });
-  update("bookings", booking.id, { status: "DISETUJUI", leaseId: lease.id, updatedAt: nowIso() });
+  update("bookings", booking.id, { status: "DISETUJUI", leaseId: lease.id, updatedAt: now });
   update("payments", id, { ...verified, leaseId: lease.id });
+  update("invoices", booking.invoiceId, { leaseId: lease.id });
+  syncInvoice(payment.invoiceId);
   for (const inq of all("inquiries").filter((i) => i.memberId === member.id && (i.status === "NEW" || i.status === "CONTACTED"))) {
-    update("inquiries", inq.id, { status: "CLOSED_WON", updatedAt: nowIso() });
+    update("inquiries", inq.id, { status: "CLOSED_WON", updatedAt: now });
   }
-  audit(admin, "payment.approve", id, `Sewa baru ${member.name} → kamar ${room.number}, ${booking.startDate} s/d ${dueDate}`);
+  audit(admin, "payment.approve", id, `Pelunasan ${member.name} → kamar ${room.number}, ${booking.startDate} s/d ${dueDate} · ${verified.receiptNo}`);
   done();
   return { ok: true, dueDate };
 }
 
-/** Tolak bukti. Sewa baru: pesanan kembali MENUNGGU_PEMBAYARAN dengan batas 24 jam baru (customer upload ulang). */
+/**
+ * Tolak bukti; customer upload ulang. Tahap DP: batas bayar 24 jam baru. Tahap PELUNASAN: batas tetap akhir masa
+ * uang muka, minimal 24 jam dari sekarang. Perpanjangan: fakturnya dibatalkan (pengajuan berikutnya membuat faktur baru).
+ */
 export async function rejectPayment(id: string, reason: string): Promise<{ ok: true } | Fail> {
   const admin = await guard("payments.verify");
   if (isFail(admin)) return admin;
@@ -271,29 +297,35 @@ export async function rejectPayment(id: string, reason: string): Promise<{ ok: t
   const payment = byId("payments", id);
   if (!payment || payment.status !== "MENUNGGU_VERIFIKASI") return fail("Pembayaran tidak ditemukan atau sudah diproses.");
   update("payments", id, { status: "DITOLAK", note, verifiedBy: admin.id, verifiedAt: nowIso() });
-  if (payment.bookingId) {
-    update("bookings", payment.bookingId, {
+  const booking = payment.bookingId ? byId("bookings", payment.bookingId) : undefined;
+  if (booking) {
+    const hold = new Date(Date.now() + HOLD_HOURS * 3_600_000).toISOString();
+    update("bookings", booking.id, {
       status: "MENUNGGU_PEMBAYARAN",
       note,
-      expiresAt: new Date(Date.now() + HOLD_HOURS * 3_600_000).toISOString(),
+      expiresAt: booking.stage === "PELUNASAN" && booking.expiresAt > hold ? booking.expiresAt : hold,
       updatedAt: nowIso(),
     });
+  } else {
+    cancelInvoice(payment.invoiceId, `Bukti ditolak: ${note}`);
   }
   audit(admin, "payment.reject", id, note);
   done();
   return { ok: true };
 }
 
-/** Batalkan pesanan yang belum dibayar; kamar dilepas. */
+/** Batalkan pesanan yang sedang menunggu pembayaran (uang muka atau pelunasan); kamar dilepas, faktur batal. */
 export async function cancelBookingAdmin(id: string): Promise<{ ok: true } | Fail> {
   const admin = await guard();
   if (isFail(admin)) return admin;
   if (!can(admin.role, "payments.verify") && !can(admin.role, "leads.assign")) return fail("Akses ditolak untuk peran Anda.", undefined, "FORBIDDEN");
   const booking = byId("bookings", id);
-  if (!booking || booking.status !== "MENUNGGU_PEMBAYARAN") return fail("Hanya pesanan yang belum dibayar yang bisa dibatalkan.");
-  update("bookings", id, { status: "DIBATALKAN", note: "Dibatalkan admin", updatedAt: nowIso() });
+  if (!booking || booking.status !== "MENUNGGU_PEMBAYARAN") return fail("Hanya pesanan yang menunggu pembayaran yang bisa dibatalkan.");
+  const note = booking.stage === "PELUNASAN" ? "Dibatalkan admin setelah uang muka dibayar (refund sesuai ketentuan)" : "Dibatalkan admin";
+  update("bookings", id, { status: "DIBATALKAN", note, updatedAt: nowIso() });
+  cancelInvoice(booking.invoiceId, note);
   if (byId("rooms", booking.roomId)?.status === "RESERVED") update("rooms", booking.roomId, { status: "AVAILABLE" });
-  audit(admin, "booking.cancel", id);
+  audit(admin, "booking.cancel", id, note);
   done();
   return { ok: true };
 }
@@ -308,6 +340,7 @@ export async function saveChannel(input: {
   qrisImage: string;
   isActive: boolean;
   sortOrder: number;
+  accurateAccount?: string;
 }): Promise<{ ok: true } | Fail> {
   const admin = await guard("channels.manage");
   if (isFail(admin)) return admin;
@@ -321,6 +354,7 @@ export async function saveChannel(input: {
     qrisImage: input.qrisImage.trim(),
     isActive: input.isActive,
     sortOrder: Number(input.sortOrder) || 0,
+    accurateAccount: (input.accurateAccount ?? "").trim(),
   };
   if (input.id) {
     if (!update("channels", input.id, data)) return fail("Kanal tidak ditemukan.");

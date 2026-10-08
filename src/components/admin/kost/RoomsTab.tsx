@@ -9,7 +9,7 @@ import { Input, Select } from "@/components/Field";
 import { Modal } from "@/components/Modal";
 import { td, th } from "@/components/admin/kit";
 import { button, card, EmptyState, Notice, Pill, Spinner } from "@/components/ui";
-import { BOOKING_STATUS } from "@/lib/constants";
+import { bookingStatusLabel } from "@/lib/constants";
 import { cn, formatDate, rupiah } from "@/lib/format";
 import type { AdminRoom, AdminRoomType } from "@/lib/kost-admin";
 import { BulkRoomsModal } from "./BulkRoomsModal";
@@ -186,7 +186,7 @@ export function RoomsTab({
                           ) : r.status === "RESERVED" ? (
                             <>
                               <p className="font-semibold text-slate-800">{r.memberName || "-"}</p>
-                              <p className="text-xs text-amber-800">{BOOKING_STATUS[r.bookingStatus]?.label ?? "Dipesan"}</p>
+                              <p className="text-xs text-amber-800">{r.bookingStatus ? bookingStatusLabel({ stage: r.bookingStage, status: r.bookingStatus }) : "Dipesan"}</p>
                             </>
                           ) : (
                             <span className="text-slate-500">-</span>

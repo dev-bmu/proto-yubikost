@@ -70,6 +70,7 @@ export function kostAdminDetail(id: string) {
     // Dihitung di server agar render klien stabil (tanpa hydration mismatch zona waktu)
     due: r.lease ? leaseStatus(r.lease.dueDate) : null,
     bookingStatus: r.booking?.status ?? "",
+    bookingStage: r.booking?.stage ?? "",
     bookingExpires: r.booking?.expiresAt ?? "",
     hasLease: !!r.lease,
     deletable: !used.has(r.id) && r.status === "AVAILABLE",

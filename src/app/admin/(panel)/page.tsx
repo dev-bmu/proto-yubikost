@@ -88,11 +88,12 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   const occSeries = [{ name: "Terisi", color: SERIES[0] }, { name: "Dipesan", color: SERIES[1] }, { name: "Kosong", color: TRACK }];
   const leadSeries = [{ name: "Pendaftar baru", color: SERIES[0] }, { name: "Jadi penghuni", color: SERIES[1] }];
   const ps = d.paymentStatus;
-  const pay = "/admin/pembayaran?status=";
+  const verify = "/admin/finance/konfirmasi";
+  const txs = "/admin/finance/transaksi?status=";
   const statusItems = [
-    { name: "Disetujui", value: ps.approved, color: STATUS.good, icon: CheckCircle2, text: "text-emerald-700", href: `${pay}riwayat` },
-    { name: "Menunggu verifikasi", value: ps.pending, color: STATUS.warning, icon: Clock, text: "text-amber-700", href: `${pay}verifikasi` },
-    { name: "Ditolak", value: ps.rejected, color: STATUS.critical, icon: XCircle, text: "text-red-700", href: `${pay}riwayat` },
+    { name: "Disetujui", value: ps.approved, color: STATUS.good, icon: CheckCircle2, text: "text-emerald-700", href: `${txs}DISETUJUI` },
+    { name: "Menunggu verifikasi", value: ps.pending, color: STATUS.warning, icon: Clock, text: "text-amber-700", href: verify },
+    { name: "Ditolak", value: ps.rejected, color: STATUS.critical, icon: XCircle, text: "text-red-700", href: `${txs}DITOLAK` },
   ];
   const dueTotal = total(d.dueWeeks.map((w) => w.count));
   const roomsHref = kostId ? `/admin/kost/${kostId}` : "/admin/kost";
@@ -101,8 +102,8 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
   // Tiap butir hanya untuk role yang berhak menindaklanjuti (PRD §9.2)
   const todos = [
     { show: canLeads, href: "/admin/leads", icon: UserPlus, label: "Lead baru", hint: "belum dihubungi", count: d.todos.newLeads },
-    { show: can(role, "payments.verify"), href: `${pay}verifikasi`, icon: FileClock, label: "Bukti pembayaran", hint: "menunggu verifikasi", count: d.todos.pendingProofs },
-    { show: can(role, "payments.verify") || can(role, "leads.assign"), href: `${pay}belum-bayar`, icon: Wallet, label: "Belum dibayar", hint: "pesanan menunggu pembayaran customer", count: d.todos.unpaid },
+    { show: can(role, "payments.verify"), href: verify, icon: FileClock, label: "Bukti pembayaran", hint: "menunggu verifikasi", count: d.todos.pendingProofs },
+    { show: can(role, "payments.verify") || can(role, "leads.assign"), href: `${verify}?status=belum-bayar`, icon: Wallet, label: "Belum dibayar", hint: "pesanan menunggu uang muka / pelunasan", count: d.todos.unpaid },
     { show: true, href: "/admin/penghuni", icon: CalendarClock, label: "Jatuh tempo", hint: "≤ 14 hari atau sudah lewat", count: d.todos.dueSoon },
   ].filter((t) => t.show);
   const todoCount = total(todos.map((t) => t.count));
@@ -134,7 +135,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
             icon={Wallet}
             label="Pendapatan bulan ini"
             tone="success"
-            href={`${pay}riwayat`}
+            href={`${txs}DISETUJUI`}
             value={<><span className="mr-1 text-base font-bold text-slate-500">Rp</span>{kpi.revenueNow >= 1e6 ? juta(kpi.revenueNow) : kpi.revenueNow.toLocaleString("id-ID")}</>}
             title={rupiah(kpi.revenueNow)}
             compact={kpi.revenueNow >= 1000}
@@ -154,7 +155,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
             icon={FileClock}
             label="Bukti menunggu verifikasi"
             value={kpi.pendingProofs}
-            href={`${pay}verifikasi`}
+            href={verify}
             tone="warning"
             sub={kpi.pendingProofs ? "perlu dicek Finance" : "antrean kosong"}
           />
@@ -258,7 +259,7 @@ export default async function AdminDashboard({ searchParams }: { searchParams: P
         >
           <div className="flex flex-col items-center gap-5 sm:flex-row xl:flex-col">
             <Donut items={statusItems.map(({ name, value, color }) => ({ name, value, color }))} caption="bukti" />
-            {/* Legenda berangka; tiap baris membuka tab Pembayaran terkait (§9.7) */}
+            {/* Legenda berangka; tiap baris membuka Finance (konfirmasi / data transaksi) terkait */}
             <ul className="w-full space-y-2">
               {statusItems.map((s) => (
                 <li key={s.name}>

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BedDouble, CalendarClock, ChevronRight, DoorOpen, UserCheck } from "lucide-react";
 import { Modal } from "@/components/Modal";
 import { button, Notice, Pill } from "@/components/ui";
-import { BOOKING_STATUS } from "@/lib/constants";
+import { BOOKING_STATUS, bookingStatusLabel } from "@/lib/constants";
 import { cn, formatDate, formatDateTime, rupiah } from "@/lib/format";
 import type { AdminRoom } from "@/lib/kost-admin";
 import { ROOM_STATUS } from "./parts";
@@ -87,7 +87,9 @@ export function FloorPlan({ kostId, rooms, totalFloors }: { kostId: string; room
 
 function RoomDetail({ room, kostId }: { room: AdminRoom; kostId: string }) {
   const s = ROOM_STATUS[room.status] ?? ROOM_STATUS.AVAILABLE!;
-  const booking = room.bookingStatus ? BOOKING_STATUS[room.bookingStatus] : undefined;
+  const booking = room.bookingStatus
+    ? { tone: BOOKING_STATUS[room.bookingStatus]?.tone ?? "warning", label: bookingStatusLabel({ stage: room.bookingStage, status: room.bookingStatus }) }
+    : undefined;
   const row = (label: string, value: React.ReactNode) => (
     <div className="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-b-0">
       <dt className="text-sm text-slate-500">{label}</dt>
@@ -126,13 +128,15 @@ function RoomDetail({ room, kostId }: { room: AdminRoom; kostId: string }) {
           <p className="font-bold text-slate-900 mt-0.5">{room.memberName || "-"}</p>
           {booking && <Pill tone={booking.tone} className="mt-2">{booking.label}</Pill>}
           {room.bookingStatus === "MENUNGGU_PEMBAYARAN" && room.bookingExpires && (
-            <p className="text-sm text-amber-900 mt-2">Batas bayar {formatDateTime(room.bookingExpires)}</p>
+            <p className="text-sm text-amber-900 mt-2">
+              {room.bookingStage === "PELUNASAN" ? "Ditahan sampai" : "Batas bayar uang muka"} {formatDateTime(room.bookingExpires)}
+            </p>
           )}
           <Link
-            href={`/admin/pembayaran?status=${room.bookingStatus === "MENUNGGU_PEMBAYARAN" ? "belum-bayar" : "verifikasi"}`}
+            href={`/admin/finance/konfirmasi?status=${room.bookingStatus === "MENUNGGU_PEMBAYARAN" ? "belum-bayar" : "verifikasi"}`}
             className={button("neutral", "sm", "mt-3 min-h-11 sm:min-h-9")}
           >
-            Lihat di Pembayaran <ChevronRight className="w-4 h-4" aria-hidden="true" />
+            Lihat di Konfirmasi Pembayaran <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Link>
         </div>
       )}

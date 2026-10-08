@@ -1,5 +1,5 @@
 "use client";
-// Pembayaran dengan upload bukti (PRD §8.4, C-20, C-26, v1.2). Sewa baru & perpanjangan.
+// Pembayaran dengan upload bukti (PRD §8.4, C-20, C-26, v1.2). Sewa baru (uang muka → pelunasan) & perpanjangan.
 // Desktop: langkah di kiri, ringkasan tagihan sticky di kanan. Mobile: ringkasan di atas.
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
@@ -9,16 +9,16 @@ import { CopyButton } from "@/components/CopyButton";
 import { RadioCard } from "@/components/Field";
 import { Modal } from "@/components/Modal";
 import { button, card, Notice, Spinner } from "@/components/ui";
-import { bookingBill, PACKAGES } from "@/lib/constants";
+import { PACKAGES, paymentLabel } from "@/lib/constants";
 import { addMonths, cn, formatDate, rupiah } from "@/lib/format";
 import { waPaymentNotice } from "@/lib/wa";
-import { NotifyAdmin, Row, StepHeading, TotalRow } from "./parts";
+import { NotifyAdmin, RentBill, Row, StepHeading, TotalRow, type RentInfo } from "./parts";
 
 export type ChannelOption = { id: string; label: string; accountNumber: string; accountHolder: string; qrisImage: string };
 
 type Common = { channels: ChannelOption[]; notice: { name: string; kost: string; room: string }; head: ReactNode; footer?: ReactNode };
 type Props = Common &
-  ({ kind: "SEWA_BARU"; bookingId: string; monthlyPrice: number; months: number } | { kind: "PERPANJANGAN"; monthlyPrice: number; dueDate: string });
+  ({ kind: "SEWA_BARU"; bookingId: string; invoiceNumber?: string; rent: RentInfo } | { kind: "PERPANJANGAN"; monthlyPrice: number; dueDate: string });
 
 const ACCEPT = "image/jpeg,image/png,image/webp,application/pdf";
 const BANK_TILE: Record<string, string> = {
@@ -30,7 +30,7 @@ const BANK_TILE: Record<string, string> = {
 
 export function PaymentForm(props: Props) {
   const router = useRouter();
-  const [months, setMonths] = useState<number>(props.kind === "SEWA_BARU" ? props.months : PACKAGES[0]);
+  const [months, setMonths] = useState<number>(PACKAGES[0]); // paket perpanjangan
   const [channelId, setChannelId] = useState(props.channels[0]?.id ?? "");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState("");
@@ -41,8 +41,9 @@ export function PaymentForm(props: Props) {
   const [sent, setSent] = useState<{ ref: string; amount: number } | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const bill = bookingBill(props.monthlyPrice, months);
-  const total = props.kind === "SEWA_BARU" ? bill.total : bill.rent;
+  // Sewa baru: tahap & nominal dari server (uang muka, atau sisa tagihan saat pelunasan). Perpanjangan: sewa × paket.
+  const total = props.kind === "SEWA_BARU" ? props.rent.due : props.monthlyPrice * months;
+  const label = props.kind === "SEWA_BARU" ? paymentLabel({ kind: props.kind, stage: props.rent.stage, dpPct: props.rent.dpPct }) : "Perpanjangan";
   const channel = props.channels.find((c) => c.id === channelId);
   const step = (n: number) => (props.kind === "PERPANJANGAN" ? n + 1 : n);
 
@@ -86,13 +87,13 @@ export function PaymentForm(props: Props) {
         <span className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto mb-4" aria-hidden="true">
           <CheckCircle2 className="w-9 h-9" />
         </span>
-        <h2 className="text-xl font-extrabold text-slate-900">Bukti pembayaran terkirim</h2>
+        <h2 className="text-xl font-extrabold text-slate-900">Bukti {label.toLowerCase()} terkirim</h2>
         <p className="mt-2 text-sm text-slate-600">
           Ref <span className="font-mono font-bold text-slate-900">{sent.ref}</span> · {rupiah(sent.amount)}. Admin memverifikasi maksimal 1 hari kerja; status bisa
           dipantau di halaman ini.
         </p>
         <div className="mt-3">
-          <NotifyAdmin href={waPaymentNotice({ ...props.notice, kind: props.kind === "SEWA_BARU" ? "sewa baru" : "perpanjangan", amount: sent.amount, ref: sent.ref })} />
+          <NotifyAdmin href={waPaymentNotice({ ...props.notice, kind: label.toLowerCase(), amount: sent.amount, ref: sent.ref })} />
         </div>
       </div>
     );
@@ -109,16 +110,16 @@ export function PaymentForm(props: Props) {
           <dl className="p-5 space-y-2">
             {props.kind === "SEWA_BARU" ? (
               <>
-                <Row label={`Sewa ${months} × ${rupiah(props.monthlyPrice)}`} value={rupiah(bill.rent)} />
-                <Row label="Deposit 1 bulan" hint="Dikembalikan saat sewa berakhir" value={rupiah(bill.deposit)} />
+                {props.invoiceNumber && <Row label="No. faktur" value={<span className="font-mono text-xs">{props.invoiceNumber}</span>} />}
+                <RentBill info={props.rent} />
               </>
             ) : (
               <>
-                <Row label={`Perpanjangan ${months} × ${rupiah(props.monthlyPrice)}`} value={rupiah(bill.rent)} />
+                <Row label={`Perpanjangan ${months} × ${rupiah(props.monthlyPrice)}`} value={rupiah(total)} />
                 <Row label="Berlaku s/d" value={formatDate(addMonths(props.dueDate, months))} />
+                <TotalRow value={total} />
               </>
             )}
-            <TotalRow value={total} />
           </dl>
         </div>
         {props.footer}
@@ -269,7 +270,7 @@ export function PaymentForm(props: Props) {
 
         <div>
           <button type="submit" disabled={busy} aria-busy={busy} className={button("primary", "lg", "w-full")}>
-            {busy ? <Spinner /> : <Upload className="w-5 h-5" aria-hidden="true" />} Kirim Bukti Pembayaran · {rupiah(total)}
+            {busy ? <Spinner /> : <Upload className="w-5 h-5" aria-hidden="true" />} Kirim Bukti {label} · {rupiah(total)}
           </button>
           {busy && (
             <div className="mt-3 h-1.5 rounded-full bg-primary/15 overflow-hidden" aria-hidden="true">

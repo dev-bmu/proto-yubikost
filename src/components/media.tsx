@@ -97,7 +97,7 @@ export function Photo({
 }) {
   if (!src) {
     return (
-      <div className="absolute inset-0 bg-primary-ultralight flex flex-col items-center justify-center gap-2 text-primary" role="img" aria-label={`${alt} — foto segera hadir`}>
+      <div className="absolute inset-0 bg-slate-100 flex flex-col items-center justify-center gap-2 text-slate-500" role="img" aria-label={`${alt} — foto segera hadir`}>
         <Building2 className="w-10 h-10" aria-hidden="true" />
         <span className="text-xs font-semibold">Foto segera hadir</span>
       </div>

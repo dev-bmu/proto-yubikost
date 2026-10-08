@@ -17,7 +17,16 @@ export default async function AdminPanelLayout({ children }: { children: React.R
     { href: "/admin/kost", label: "Kost & Kamar", icon: "catalog" },
     ...(can(admin.role, "leads.manage") ? [{ href: "/admin/leads", label: "Leads", icon: "leads", badge: newLeads } as NavItem] : []),
     { href: "/admin/penghuni", label: "Penghuni", icon: "residents" },
-    { href: "/admin/pembayaran", label: "Pembayaran", icon: "renewals", badge: pendingPayments },
+    ...(can(admin.role, "finance.view") ? [{
+      href: "/admin/finance",
+      label: "Finance",
+      icon: "finance",
+      children: [
+        { href: "/admin/finance/konfirmasi", label: "Konfirmasi Pembayaran", badge: pendingPayments },
+        { href: "/admin/finance/transaksi", label: "Data Transaksi" },
+        ...(can(admin.role, "finance.export") ? [{ href: "/admin/finance/accurate", label: "Ekspor Accurate" }] : []),
+      ],
+    } as NavItem] : []),
     ...(can(admin.role, "channels.manage") ? [{ href: "/admin/rekening", label: "Rekening & QRIS", icon: "channels" } as NavItem] : []),
     ...(can(admin.role, "audit.view") ? [{ href: "/admin/audit", label: "Audit Log", icon: "audit" } as NavItem] : []),
   ];

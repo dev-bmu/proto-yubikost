@@ -1,5 +1,6 @@
 "use client";
-// Sewa Kamar langkah 2–3 (PRD §8.3, v1.2): pilih tipe kamar → pilih nomor kamar → panel pemesanan.
+// Sewa Kamar langkah 2–3 (PRD §8.3, v1.2): pilih tipe kamar → pilih nomor kamar → panel pemesanan
+// (tanggal check-in, paket, uang muka sesuai Ketentuan Kos Brave 17 Juli 2026).
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BedDouble, CalendarDays, Check, Clock, Layers, MessageCircle, MousePointerClick, Ruler } from "lucide-react";
@@ -8,10 +9,10 @@ import { logSurvey } from "@/actions/member";
 import { Input, RadioCard } from "@/components/Field";
 import { FacilityChips, Photo } from "@/components/media";
 import { button, card, Notice, Pill, Spinner } from "@/components/ui";
-import { bookingBill, HOLD_HOURS, PACKAGES } from "@/lib/constants";
-import { addMonths, cn, formatDate, rupiah, todayIso } from "@/lib/format";
+import { bookingBill, DP_TIERS, dpOptions, HOLD_HOURS, MAX_CHECKIN_DAYS, PACKAGES } from "@/lib/constants";
+import { addMonths, cn, daysUntil, formatDate, rupiah, todayIso, toIsoDate } from "@/lib/format";
 import { waSurvey } from "@/lib/wa";
-import { Row, StepHeading, TotalRow } from "./parts";
+import { BookingTerms, inDays, RentBill, Row, StepHeading } from "./parts";
 
 export type TypeOption = {
   id: string; name: string; size: string; monthlyPrice: number; facilities: string[]; photos: string[]; description: string;
@@ -198,22 +199,45 @@ function TypeCard({ type: t, selected, onSelect }: { type: TypeOption; selected:
   );
 }
 
+/** Check-in paling jauh: hari ini + masa berlaku uang muka terpanjang. */
+function lastCheckIn() {
+  const d = new Date();
+  d.setDate(d.getDate() + MAX_CHECKIN_DAYS);
+  return toIsoDate(d);
+}
+
 function BookingPanel({
   kost, type, room, memberName,
 }: { kost: { id: string; name: string }; type?: TypeOption; room?: TypeOption["rooms"][number]; memberName: string }) {
   const router = useRouter();
-  const [startDate, setStartDate] = useState(todayIso());
+  const today = todayIso();
+  const [startDate, setStartDate] = useState(today);
   const [months, setMonths] = useState<number>(PACKAGES[0]);
+  const [dpPct, setDpPct] = useState<number>(DP_TIERS[0].pct);
   const [error, setError] = useState<{ text: string; field?: string } | null>(null);
   const [busy, setBusy] = useState(false);
   const [surveyed, setSurveyed] = useState(false);
+
+  // Masa berlaku uang muka harus mencakup tanggal check-in (Ketentuan Kos Brave): check-in jauh → uang muka lebih besar.
+  const last = lastCheckIn();
+  const days = startDate ? daysUntil(startDate) : NaN;
+  const dateOk = days >= 0 && days <= MAX_CHECKIN_DAYS;
+  const eligible = dateOk ? dpOptions(days) : [];
+  const tier = DP_TIERS.find((t) => t.pct === dpPct) ?? DP_TIERS[0];
+
+  function pickDate(value: string) {
+    setStartDate(value);
+    setError(null);
+    const min = value ? dpOptions(daysUntil(value))[0] : undefined;
+    if (min) setDpPct(min.pct);
+  }
 
   async function submit(e: FormEvent) {
     e.preventDefault();
     if (!room) return;
     setBusy(true);
     setError(null);
-    const r = await createBooking({ roomId: room.id, startDate, months }).catch(() => ({ ok: false as const, error: "Gagal terhubung ke server. Coba lagi.", field: undefined, code: undefined }));
+    const r = await createBooking({ roomId: room.id, startDate, months, dpPct }).catch(() => ({ ok: false as const, error: "Gagal terhubung ke server. Coba lagi.", field: undefined, code: undefined }));
     if (r.ok) {
       router.push("/dashboard/pembayaran");
       router.refresh();
@@ -246,19 +270,21 @@ function BookingPanel({
     );
   }
 
-  const bill = bookingBill(type.monthlyPrice, months);
+  const bill = bookingBill(type.monthlyPrice, months, dpPct);
   return (
     <form onSubmit={submit} noValidate className={card(false, "overflow-hidden")}>
       {header}
       <div className="p-5 space-y-5">
         <Input
-          label="Tanggal mulai sewa"
+          label="Tanggal check-in"
           type="date"
           required
-          min={todayIso()}
+          min={today}
+          max={last}
           value={startDate}
-          onChange={(e) => setStartDate(e.target.value)}
-          error={error?.field === "startDate" ? error.text : undefined}
+          onChange={(e) => pickDate(e.target.value)}
+          hint={`Paling lambat ${formatDate(last)} (${MAX_CHECKIN_DAYS} hari dari hari ini).`}
+          error={error?.field === "startDate" ? error.text : dateOk ? undefined : `Pilih tanggal antara hari ini dan ${formatDate(last)}.`}
         />
         <fieldset>
           <legend className="block text-xs font-semibold text-slate-600 mb-1.5">Paket sewa *</legend>
@@ -272,26 +298,65 @@ function BookingPanel({
           </div>
           {error?.field === "months" && <p className="mt-1 text-xs text-red-600" role="alert">{error.text}</p>}
         </fieldset>
+        <fieldset aria-describedby="dp-info">
+          <legend className="block text-xs font-semibold text-slate-600 mb-1.5">Uang muka *</legend>
+          <div className="space-y-2">
+            {DP_TIERS.map((t) => {
+              const ok = eligible.some((o) => o.pct === t.pct);
+              return (
+                <label
+                  key={t.pct}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-xl border-2 border-slate-200 text-sm transition-colors",
+                    ok
+                      ? "cursor-pointer hover:border-primary/40 has-[:checked]:border-primary has-[:checked]:bg-primary-ultralight has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-primary/40"
+                      : "bg-slate-50 text-slate-500 cursor-not-allowed",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="dpPct"
+                    value={t.pct}
+                    checked={dpPct === t.pct}
+                    disabled={!ok}
+                    onChange={() => setDpPct(t.pct)}
+                    className="w-4 h-4 accent-primary shrink-0"
+                  />
+                  <span className="flex-1 min-w-0">
+                    <span className={ok ? "text-slate-700" : undefined}>
+                      <strong className={cn("font-bold", ok && "text-slate-900")}>{t.pct}%</strong> ·{" "}
+                      <span className="tabular-nums">{rupiah(bookingBill(type.monthlyPrice, months, t.pct).dp)}</span> · berlaku {t.days} hari
+                    </span>
+                    {!ok && dateOk && <span className="block text-xs">Tidak tersedia: check-in lebih dari {t.days} hari lagi</span>}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+          <p id="dp-info" className="mt-1.5 text-xs text-slate-500" aria-live="polite">
+            {dateOk ? `Check-in ${inDays(startDate)}: uang muka minimal ${eligible[0].pct}%.` : "Pilih tanggal check-in yang valid untuk memilih uang muka."}
+          </p>
+          {error?.field === "dpPct" && <p className="mt-1 text-xs text-red-600" role="alert">{error.text}</p>}
+        </fieldset>
         <dl className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2">
           <Row
             label={<span className="inline-flex items-center gap-1.5"><CalendarDays className="w-4 h-4" aria-hidden="true" /> Masa sewa</span>}
-            value={startDate ? `${formatDate(startDate, "short")} – ${formatDate(addMonths(startDate, months), "short")}` : "-"}
+            value={dateOk ? `${formatDate(startDate, "short")} – ${formatDate(addMonths(startDate, months), "short")}` : "-"}
           />
-          <Row label={`Sewa ${months} × ${rupiah(type.monthlyPrice)}`} value={rupiah(bill.rent)} />
-          <Row label="Deposit 1 bulan" hint="Dikembalikan saat sewa berakhir" value={rupiah(bill.deposit)} />
-          <TotalRow value={bill.total} />
+          <RentBill info={{ stage: "DP", status: "MENUNGGU_PEMBAYARAN", months, monthlyPrice: type.monthlyPrice, dpPct, bill, paid: 0, due: bill.dp }} />
         </dl>
         <p className="flex items-start gap-2 text-xs text-slate-600">
           <Clock className="w-4 h-4 shrink-0 text-amber-700" aria-hidden="true" />
-          Kamar ditahan untuk Anda selama {HOLD_HOURS} jam. Transfer lalu upload bukti di menu Pembayaran sebelum batas waktu.
+          Kamar ditahan {HOLD_HOURS} jam untuk pembayaran uang muka; setelah diverifikasi kamar ditahan sampai {tier.days} hari sejak pembayaran.
         </p>
-        {error && !["startDate", "months"].includes(error.field ?? "") && (
+        <BookingTerms />
+        {error && !["startDate", "months", "dpPct"].includes(error.field ?? "") && (
           <Notice tone="danger">
             <span role="alert">{error.text}</span>
           </Notice>
         )}
         <button type="submit" disabled={busy} aria-busy={busy} className={button("primary", "lg", "w-full")}>
-          {busy && <Spinner />} Ajukan Sewa & Lanjut Bayar
+          {busy && <Spinner />} Ajukan Sewa & Bayar Uang Muka
         </button>
 
         <div className="pt-4 border-t border-slate-100 space-y-2">

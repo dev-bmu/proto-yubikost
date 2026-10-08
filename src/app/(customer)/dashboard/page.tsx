@@ -5,16 +5,17 @@ import {
   Layers, LayoutDashboard, MapPin, MessageCircle, ReceiptText, Ruler, ScrollText, ShieldCheck, Upload, UserRound, Wallet, type LucideIcon,
 } from "lucide-react";
 import { CancelBookingButton } from "@/components/customer/CancelBookingButton";
-import { Countdown } from "@/components/customer/Countdown";
-import { BookingCard, KostPickCard, NotifyAdmin, PageHeader, ProgressSteps, Timeline } from "@/components/customer/parts";
+import {
+  BookingCard, BookingCountdown, BookingWaitingCard, CancelViaCare, KostPickCard, PageHeader, ProgressSteps,
+} from "@/components/customer/parts";
 import { FacilityChips, Photo } from "@/components/media";
 import { button, card, Eyebrow, kostTypeClass, Notice, Pill } from "@/components/ui";
-import { BOOKING_STATUS, DEPOSIT_MONTHS, HOLD_HOURS, PAYMENT_KIND_LABEL, PAYMENT_STATUS, paymentRef } from "@/lib/constants";
+import { BOOKING_STAGE_LABEL, BOOKING_STATUS, DEPOSIT, DP_TIERS, HOLD_HOURS, PAYMENT_STATUS, paymentLabel, paymentRef } from "@/lib/constants";
 import { customerGuard } from "@/lib/customer-guard";
 import { all, byId } from "@/lib/db";
 import { addMonths, cn, daysUntil, firstName, formatDate, formatDateTime, formatPhone, leaseStatus, maskNik, rupiah } from "@/lib/format";
 import { kostCards, type CustomerContext } from "@/lib/queries";
-import { waKost, waPaymentNotice } from "@/lib/wa";
+import { waKost } from "@/lib/wa";
 
 export const metadata = { title: "Ringkasan" };
 
@@ -84,7 +85,12 @@ function ProspectView({ ctx }: { ctx: CustomerContext }) {
       {last && lastRoom && (last.status === "KEDALUWARSA" || last.status === "DIBATALKAN") && (
         <Notice tone="neutral">
           Pesanan Kamar {lastRoom.number} terakhir Anda {BOOKING_STATUS[last.status]?.label.toLowerCase()}
-          {last.status === "KEDALUWARSA" ? " karena bukti pembayaran belum diunggah sebelum batas waktu" : ""}. Silakan pilih kamar lagi.
+          {last.status === "KEDALUWARSA"
+            ? last.stage === "PELUNASAN"
+              ? " karena pelunasan belum dibayar sampai masa berlaku uang muka habis"
+              : ` karena uang muka belum dibayar dalam ${HOLD_HOURS} jam`
+            : ""}
+          . Silakan pilih kamar lagi.
         </Notice>
       )}
 
@@ -120,10 +126,10 @@ function ProspectView({ ctx }: { ctx: CustomerContext }) {
         <h2 id="cara-sewa" className="text-lg font-bold text-slate-900 mb-4">Yang perlu Anda tahu</h2>
         <ul className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <Tip icon={Clock} tone="bg-amber-100 text-amber-800" title={`Kamar ditahan ${HOLD_HOURS} jam`}>
-            Setelah mengajukan sewa, kamar dikunci untuk Anda selama {HOLD_HOURS} jam sambil menunggu pembayaran.
+            Setelah mengajukan sewa, bayar uang muka dalam {HOLD_HOURS} jam. Setelah diverifikasi, kamar ditahan untuk Anda sampai check-in.
           </Tip>
-          <Tip icon={Wallet} tone="bg-primary/10 text-primary" title={`Deposit ${DEPOSIT_MONTHS} bulan`}>
-            Tagihan pertama = sewa × paket + deposit, dikembalikan saat masa sewa berakhir.
+          <Tip icon={Wallet} tone="bg-primary/10 text-primary" title={`Uang muka mulai ${DP_TIERS[0].pct}%`}>
+            Sisa sewa dan deposit {DEPOSIT} dilunasi saat check-in. Deposit kembali setelah masa sewa berakhir sesuai ketentuan.
           </Tip>
           <Tip icon={ShieldCheck} tone="bg-emerald-100 text-emerald-700" title="Verifikasi 1 hari kerja">
             Upload bukti transfer di menu Pembayaran; admin memverifikasi maksimal 1 hari kerja.
@@ -175,37 +181,53 @@ function BookingView({ ctx }: { ctx: CustomerContext }) {
   const booking = ctx.booking!;
   const typeName = booking.room && byId("roomTypes", booking.room.typeId)?.name;
   const label = `${booking.kost?.name} · Kamar ${booking.room?.number}`;
+  const lunas = booking.stage === "PELUNASAN";
+  const checkIn = formatDate(booking.startDate);
 
   if (booking.status === "MENUNGGU_PEMBAYARAN") {
     return (
       <div className="space-y-8">
         <PageHeader icon={LayoutDashboard} title={greeting(member.name)}>
-          Kamar sudah ditahan untuk Anda. Selesaikan pembayaran sebelum batas waktu agar pesanan tidak batal.
+          {lunas
+            ? `Uang muka Anda sudah diterima dan kamar ditahan sampai ${formatDateTime(booking.expiresAt)}. Lunasi sisa sewa + deposit saat check-in ${checkIn}.`
+            : "Kamar sudah ditahan untuk Anda. Bayar uang muka sebelum batas waktu agar pesanan tidak batal."}
         </PageHeader>
-        <ProgressSteps current={1} rejected={Boolean(booking.note)} />
+        <ProgressSteps current={lunas ? 3 : 1} rejected={Boolean(booking.note)} />
         {booking.note && (
           <div className="rounded-2xl bg-red-100 text-red-700 p-4 text-sm" role="alert">
-            <strong>Bukti sebelumnya ditolak:</strong> {booking.note}. Silakan transfer ulang atau upload bukti yang benar.
+            <strong>Bukti {BOOKING_STAGE_LABEL[booking.stage]?.toLowerCase() ?? "pembayaran"} sebelumnya ditolak:</strong> {booking.note}. Silakan transfer ulang
+            atau upload bukti yang benar.
           </div>
         )}
         <BookingCard booking={booking} typeName={typeName}>
           <div className="mt-4">
-            <Countdown expiresAt={booking.expiresAt} deadline={formatDateTime(booking.expiresAt)} />
+            <BookingCountdown booking={booking} />
           </div>
           <div className="mt-5 flex flex-col sm:flex-row gap-2">
             <Link href="/dashboard/pembayaran" className={button("primary", "lg", "sm:flex-1")}>
-              <CreditCard className="w-5 h-5" aria-hidden="true" /> Bayar & Upload Bukti
+              <CreditCard className="w-5 h-5" aria-hidden="true" /> {lunas ? "Bayar Pelunasan" : "Bayar Uang Muka"}
             </Link>
-            <CancelBookingButton id={booking.id} label={label} size="lg" />
+            {!lunas && <CancelBookingButton id={booking.id} label={label} size="lg" />}
           </div>
+          {lunas && <CancelViaCare className="mt-4" name={member.name} place={`${label} (check-in ${checkIn})`} />}
         </BookingCard>
         <section aria-labelledby="cara-bayar">
           <h2 id="cara-bayar" className="text-lg font-bold text-slate-900 mb-4">Cara membayar</h2>
           <ol className="grid sm:grid-cols-3 gap-4">
             {[
-              { icon: Wallet, title: "Transfer", text: "Ke rekening atau QRIS resmi Brave yang tertera di menu Pembayaran." },
+              {
+                icon: Wallet,
+                title: lunas ? "Transfer pelunasan" : "Transfer uang muka",
+                text: `${rupiah(booking.due)} ke rekening atau QRIS resmi Brave yang tertera di menu Pembayaran.`,
+              },
               { icon: Upload, title: "Upload bukti", text: "Foto atau PDF bukti transfer, maksimal 3 MB." },
-              { icon: BadgeCheck, title: "Verifikasi admin", text: "Maksimal 1 hari kerja, lalu Anda resmi menjadi Penghuni." },
+              {
+                icon: BadgeCheck,
+                title: "Verifikasi admin",
+                text: lunas
+                  ? "Maksimal 1 hari kerja, lalu Anda resmi menjadi Penghuni dan melengkapi biodata."
+                  : "Maksimal 1 hari kerja. Kamar lalu ditahan sampai check-in; sisa sewa + deposit dilunasi saat check-in.",
+              },
             ].map((s, i) => (
               <li key={s.title} className={card(false, "p-5 flex gap-4")}>
                 <span className="w-11 h-11 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0" aria-hidden="true">
@@ -223,55 +245,14 @@ function BookingView({ ctx }: { ctx: CustomerContext }) {
     );
   }
 
-  // MENUNGGU_VERIFIKASI
+  // MENUNGGU_VERIFIKASI (bukti uang muka atau pelunasan)
   return (
     <div className="space-y-8">
       <PageHeader icon={LayoutDashboard} title={greeting(member.name)}>
-        Bukti pembayaran Anda sudah kami terima. Admin sedang memverifikasinya.
+        Bukti {lunas ? "pelunasan" : "uang muka"} Anda sudah kami terima. Admin sedang memverifikasinya.
       </PageHeader>
-      <ProgressSteps current={2} />
-      <section className={card(false, "p-6 sm:p-8 grid md:grid-cols-2 gap-8")} aria-labelledby="verifikasi-title">
-        <div>
-          <Pill tone="info">
-            <Hourglass className="w-3.5 h-3.5" aria-hidden="true" /> Menunggu Verifikasi
-          </Pill>
-          <h2 id="verifikasi-title" className="mt-3 text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900">Bukti pembayaran sedang diverifikasi</h2>
-          <p className="mt-2 text-sm text-slate-600 leading-relaxed">
-            Admin memverifikasi bukti pembayaran maksimal 1 hari kerja. Setelah disetujui, Anda menjadi Penghuni dan diminta melengkapi biodata.
-          </p>
-          {bookingPayment && (
-            <dl className="mt-5 grid grid-cols-2 gap-3 text-sm">
-              {[
-                ["Ref", <span key="r" className="font-mono">{paymentRef(bookingPayment.id)}</span>],
-                ["Nominal", rupiah(bookingPayment.amount)],
-                ["Dikirim", formatDateTime(bookingPayment.createdAt)],
-                ["Kanal", bookingPayment.channelLabel],
-              ].map(([k, v]) => (
-                <div key={k as string} className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                  <dt className="text-xs text-slate-500">{k}</dt>
-                  <dd className="font-bold text-slate-800 tabular-nums">{v}</dd>
-                </div>
-              ))}
-            </dl>
-          )}
-          {bookingPayment && (
-            <div className="mt-3">
-              <NotifyAdmin
-                href={waPaymentNotice({ name: member.name, kind: "sewa baru", kost: booking.kost?.name ?? "-", room: booking.room?.number ?? "-", amount: bookingPayment.amount, ref: paymentRef(bookingPayment.id) })}
-              />
-            </div>
-          )}
-        </div>
-        <Timeline
-          items={[
-            { label: "Pesanan dibuat", desc: formatDateTime(booking.createdAt), state: "done" },
-            { label: "Bukti pembayaran dikirim", desc: bookingPayment ? formatDateTime(bookingPayment.createdAt) : undefined, state: "done" },
-            { label: "Verifikasi admin", desc: "Maksimal 1 hari kerja", state: "active" },
-            { label: "Lengkapi biodata", desc: "Data KTP & kontak darurat", state: "todo" },
-            { label: "Check-in", desc: `Mulai ${formatDate(booking.startDate)}`, state: "todo" },
-          ]}
-        />
-      </section>
+      <ProgressSteps current={lunas ? 3 : 2} />
+      {bookingPayment && <BookingWaitingCard booking={booking} payment={bookingPayment} memberName={member.name} />}
       <BookingCard booking={booking} typeName={typeName} />
     </div>
   );
@@ -293,6 +274,7 @@ function ResidentView({ ctx }: { ctx: CustomerContext }) {
   const fill = Math.min(100, Math.max(0, (left / total) * 100));
   const lastPay = payments[0];
   const lastRenewal = payments.find((p) => p.kind === "PERPANJANGAN");
+  const dpOf = new Map(all("bookings").filter((b) => b.memberId === member.id).map((b) => [b.id, b.dpPct]));
   const mapsHref = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(kost.address)}`;
 
   return (
@@ -399,7 +381,7 @@ function ResidentView({ ctx }: { ctx: CustomerContext }) {
                       <ReceiptText className="w-5 h-5" />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-slate-900">{PAYMENT_KIND_LABEL[p.kind] ?? p.kind} · {p.months} bulan</p>
+                      <p className="text-sm font-bold text-slate-900">{paymentLabel({ ...p, dpPct: dpOf.get(p.bookingId) })} · {p.months} bulan</p>
                       <p className="text-xs text-slate-500">{formatDate(p.createdAt, "short")} · <span className="font-mono">Ref {paymentRef(p.id)}</span></p>
                     </div>
                     <div className="text-right shrink-0">

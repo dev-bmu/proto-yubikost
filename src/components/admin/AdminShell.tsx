@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BedDouble, Building2, CreditCard, ExternalLink, LayoutDashboard, LogOut, Menu, ReceiptText, ScrollText, UserPlus, Users, X,
+  BedDouble, Building2, CreditCard, ExternalLink, LayoutDashboard, LogOut, Menu, ScrollText, UserPlus, Users, Wallet, X,
 } from "lucide-react";
 import { logoutAdmin } from "@/actions/admin";
 import { cn } from "@/lib/format";
@@ -15,13 +15,24 @@ const ICONS = {
   rooms: BedDouble,
   leads: UserPlus,
   residents: Users,
-  renewals: ReceiptText,
+  finance: Wallet,
   channels: CreditCard,
   catalog: Building2,
   audit: ScrollText,
 };
 
-export type NavItem = { href: string; label: string; icon: keyof typeof ICONS; badge?: number };
+type NavLink = { href: string; label: string; badge?: number };
+/** children = sub-menu (selalu tampil); induk menyala bila salah satu sub-menu aktif. */
+export type NavItem = NavLink & { icon: keyof typeof ICONS; children?: NavLink[] };
+
+function Badge({ n }: { n?: number }) {
+  return n ? (
+    <span className="min-w-6 h-6 px-1.5 rounded-full bg-accent text-slate-950 text-xs font-bold flex items-center justify-center">
+      {n}
+      <span className="sr-only"> menunggu</span>
+    </span>
+  ) : null;
+}
 
 export function AdminShell({
   items,
@@ -51,6 +62,37 @@ export function AdminShell({
       {items.map((item) => {
         const Icon = ICONS[item.icon];
         const active = isActive(item.href);
+        if (item.children)
+          return (
+            <div key={item.href} role="group" aria-label={item.label}>
+              <p
+                aria-hidden="true"
+                className={cn("flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium", active ? "bg-slate-800 text-white" : "text-slate-300")}
+              >
+                <Icon className={cn("w-5 h-5 shrink-0", active && "text-accent")} aria-hidden="true" />
+                {item.label}
+              </p>
+              <div className="ml-5 mt-1 pl-2 border-l border-slate-700 space-y-1">
+                {item.children.map((c) => {
+                  const on = isActive(c.href);
+                  return (
+                    <Link
+                      key={c.href}
+                      href={c.href}
+                      aria-current={on ? "page" : undefined}
+                      className={cn(
+                        "flex items-center gap-2 min-h-11 lg:min-h-10 px-2.5 py-2 rounded-lg text-[13px] transition-colors",
+                        on ? "bg-primary text-white font-semibold" : "text-slate-300 hover:bg-slate-800 hover:text-white",
+                      )}
+                    >
+                      <span className="flex-1">{c.label}</span>
+                      <Badge n={c.badge} />
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          );
         return (
           <Link
             key={item.href}
@@ -63,12 +105,7 @@ export function AdminShell({
           >
             <Icon className={cn("w-5 h-5 shrink-0", active ? "text-accent" : "")} aria-hidden="true" />
             <span className="flex-1">{item.label}</span>
-            {item.badge ? (
-              <span className="min-w-6 h-6 px-1.5 rounded-full bg-accent text-slate-950 text-xs font-bold flex items-center justify-center">
-                {item.badge}
-                <span className="sr-only"> menunggu</span>
-              </span>
-            ) : null}
+            <Badge n={item.badge} />
           </Link>
         );
       })}

@@ -8,7 +8,7 @@ export default async function PublicLayout({ children }: { children: React.React
   const viewer = await currentViewer();
   return (
     <GateProvider viewer={viewer}>
-      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-primary focus:font-bold">
+      <a href="#konten" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[70] focus:px-4 focus:py-2 focus:rounded-lg focus:bg-white focus:text-ink focus:font-bold">
         Lewati ke konten
       </a>
       <Navbar />

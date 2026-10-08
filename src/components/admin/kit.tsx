@@ -15,18 +15,23 @@ export function PageHeader({ title, description, actions }: { title: string; des
   );
 }
 
-/** Kartu statistik admin (C-22) — tanpa persentase. */
-export function StatCard({ label, value, icon, tone = "primary" }: { label: string; value: number | string; icon: ReactNode; tone?: "primary" | "success" | "warning" }) {
+/** Kartu statistik admin (C-22) — tanpa persentase. Nilai teks (mis. rupiah) mengecil mengikuti lebar kartu. */
+export function StatCard({ label, value, icon, tone = "primary", sub }: {
+  label: string; value: number | string; icon: ReactNode; tone?: "primary" | "success" | "warning"; sub?: ReactNode;
+}) {
   const tones = {
     primary: "bg-primary/10 text-primary",
     success: "bg-emerald-100 text-emerald-700",
     warning: "bg-amber-100 text-amber-800",
   };
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/80 shadow-card p-5">
+    <div className="@container bg-white rounded-2xl border border-slate-200/80 shadow-card p-5">
       <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center mb-3", tones[tone])} aria-hidden="true">{icon}</div>
-      <p className="text-3xl font-extrabold text-slate-900 tabular-nums">{value}</p>
+      <p className={cn("font-extrabold text-slate-900 tabular-nums whitespace-nowrap", typeof value === "number" ? "text-3xl" : "text-[length:clamp(1rem,12cqi,1.875rem)] leading-9")}>
+        {value}
+      </p>
       <p className="text-sm text-slate-500 mt-0.5">{label}</p>
+      {sub && <p className="text-xs text-slate-500 mt-1">{sub}</p>}
     </div>
   );
 }

@@ -30,14 +30,14 @@ export function Gallery({ photos, name }: { photos: string[]; name: string }) {
             type="button"
             onClick={() => setIndex(i)}
             aria-label={i === 3 && extra > 0 ? `Lihat semua ${n} foto ${name}` : `Buka foto ${i + 1} dari ${n} — ${name}`}
-            className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-slate-200"
+            className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-sand"
           >
             <Photo src={src} alt="" sizes="(min-width: 640px) 25vw, 50vw" priority={i === 0} className="transition-transform duration-700 group-hover:scale-105" />
             <span className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center" aria-hidden="true">
               <Maximize2 className="w-6 h-6 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
             </span>
             {i === 0 && (
-              <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-lg bg-primary text-white text-xs font-bold shadow-lg shadow-black/25">Foto Utama</span>
+              <span className="absolute top-2.5 left-2.5 px-2.5 py-1 rounded-full bg-white text-ink text-xs font-semibold shadow-sm">Foto Utama</span>
             )}
             {i === 3 && extra > 0 && (
               <span className="absolute inset-0 bg-black/55 flex flex-col items-center justify-center text-white" aria-hidden="true">
@@ -66,7 +66,7 @@ export function TypePhotos({ photos, name }: { photos: string[]; name: string })
         className="group absolute inset-0 focus-visible:outline-offset-[-3px]"
       >
         <Photo src={photos[0]} alt="" sizes="(min-width: 640px) 260px, 100vw" className="transition-transform duration-700 group-hover:scale-105" />
-        <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900/75 text-white text-xs font-bold" aria-hidden="true">
+        <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-ink/75 text-white text-xs font-bold" aria-hidden="true">
           <Images className="w-3.5 h-3.5" /> {photos.length} foto
         </span>
       </button>
@@ -146,7 +146,7 @@ function Lightbox({ photos, name, index, setIndex }: { photos: string[]; name: s
       )}
       <div className="flex justify-center gap-2 p-5" aria-hidden="true">
         {photos.map((src, i) => (
-          <span key={src + i} className={cn("h-2 rounded-full transition-all", i === index ? "w-6 bg-accent" : "w-2 bg-white/40")} />
+          <span key={src + i} className={cn("h-2 rounded-full transition-all", i === index ? "w-6 bg-white" : "w-2 bg-white/40")} />
         ))}
       </div>
     </div>

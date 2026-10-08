@@ -1,7 +1,7 @@
 // Server wrapper: menyiapkan daftar akun demo dari TSV untuk <DemoBar>.
 import { all } from "@/lib/db";
 import { ROLE_LABEL, type AdminRole } from "@/lib/perm";
-import { BOOKING_STATUS } from "@/lib/constants";
+import { bookingStatusLabel } from "@/lib/constants";
 import { activeBookingOfMember, activeLeaseOfMember, profileOf } from "@/lib/queries";
 import { leaseStatus } from "@/lib/format";
 import { DemoBar } from "./DemoBar";
@@ -10,7 +10,7 @@ export function DemoBarServer() {
   // Akun hasil generator data (mbr-g*/mbr-l*) disembunyikan agar panel tetap ringkas.
   const members = all("members").filter((m) => !/^mbr-[gl]\d/.test(m.id)).map((m) => {
     const booking = activeBookingOfMember(m.id);
-    let note = booking ? `Calon Penghuni · pesanan ${BOOKING_STATUS[booking.status]?.label.toLowerCase()}` : "Calon Penghuni (Prospect)";
+    let note = booking ? `Calon Penghuni · ${bookingStatusLabel(booking).toLowerCase()}` : "Calon Penghuni (Prospect)";
     if (m.role === "RESIDENT") {
       const lease = activeLeaseOfMember(m.id);
       const parts = ["Penghuni"];

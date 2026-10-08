@@ -15,7 +15,7 @@ import { RoomTypesTab } from "@/components/admin/kost/RoomTypesTab";
 import { Photo } from "@/components/media";
 import { button, card, kostTypeClass, Notice, Pill } from "@/components/ui";
 import { requireAdmin } from "@/lib/admin-guard";
-import { BOOKING_STATUS } from "@/lib/constants";
+import { BOOKING_STATUS, bookingStatusLabel } from "@/lib/constants";
 import { byId } from "@/lib/db";
 import { cn, formatDate, formatDateTime, formatPhone, leaseStatus, rupiah } from "@/lib/format";
 import { kostAdminDetail } from "@/lib/kost-admin";
@@ -274,8 +274,8 @@ export default async function KostDetailPage({
               <section aria-labelledby="pesanan-aktif" className="space-y-3">
                 <div className="flex flex-wrap items-end justify-between gap-2">
                   <h2 id="pesanan-aktif" className="text-lg font-bold text-slate-900">Pesanan aktif <span className="text-slate-500 font-semibold">· {orders.length}</span></h2>
-                  <Link href="/admin/pembayaran" className={button("neutral", "sm", "min-h-11 sm:min-h-9")}>
-                    Buka Pembayaran <ChevronRight className="w-4 h-4" aria-hidden="true" />
+                  <Link href="/admin/finance/konfirmasi" className={button("neutral", "sm", "min-h-11 sm:min-h-9")}>
+                    Buka Konfirmasi Pembayaran <ChevronRight className="w-4 h-4" aria-hidden="true" />
                   </Link>
                 </div>
                 <TableWrap caption={`Pesanan menunggu pembayaran atau verifikasi di ${kost.name}`}>
@@ -295,10 +295,10 @@ export default async function KostDetailPage({
                             <p className="font-bold text-slate-900 tabular-nums">{r.number}</p>
                             <p className="text-xs text-slate-500">{r.typeName}</p>
                           </td>
-                          <td className={td}>{b ? <Pill tone={b.tone}>{b.label}</Pill> : "-"}</td>
+                          <td className={td}>{b ? <Pill tone={b.tone}>{bookingStatusLabel({ stage: r.bookingStage, status: r.bookingStatus })}</Pill> : "-"}</td>
                           <td className={cn(td, "whitespace-nowrap")}>{unpaid ? formatDateTime(r.bookingExpires) : "Bukti terkirim"}</td>
                           <td className={td}>
-                            <Link href={`/admin/pembayaran?status=${unpaid ? "belum-bayar" : "verifikasi"}`} className={button("neutral", "sm", "min-h-11 sm:min-h-9")}>
+                            <Link href={`/admin/finance/konfirmasi?status=${unpaid ? "belum-bayar" : "verifikasi"}`} className={button("neutral", "sm", "min-h-11 sm:min-h-9")}>
                               {unpaid ? "Lihat pesanan" : "Verifikasi"} <ChevronRight className="w-4 h-4" aria-hidden="true" />
                             </Link>
                           </td>

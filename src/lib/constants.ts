@@ -9,9 +9,48 @@ export const KOST_TYPES = ["Putra", "Putri", "Campur"] as const;
 /** Kode referensi pembayaran: "pay-1a2b3c4d" → "1A2B3C4D" */
 export const paymentRef = (id: string) => id.replace(/^pay-/, "").toUpperCase();
 
-/** Deposit sewa pertama = 1 × harga kamar per bulan (PRD K-15). Kamar ditahan 24 jam setelah pesanan (K-16). */
-export const DEPOSIT_MONTHS = 1;
+/** Kamar ditahan 24 jam setelah pesanan untuk pembayaran uang muka (K-16). */
 export const HOLD_HOURS = 24;
+
+// ── Uang muka & deposit (Ketentuan dan Tata Tertib Kos Brave per 17 Juli 2026) ──
+/** Uang muka (DP) minimal & masa berlakunya sejak DP dibayar. Pelunasan + deposit dibayar saat check-in. */
+export const DP_TIERS = [
+  { pct: 25, days: 13 },
+  { pct: 50, days: 20 },
+  { pct: 100, days: 28 },
+] as const;
+export type DpPct = (typeof DP_TIERS)[number]["pct"];
+/** Check-in paling jauh = masa berlaku DP terpanjang. */
+export const MAX_CHECKIN_DAYS = DP_TIERS[DP_TIERS.length - 1].days;
+/** Deposit kos bulanan, dibayar saat check-in bersama pelunasan. */
+export const DEPOSIT_AMOUNT = 200_000;
+
+/** DP yang boleh dipilih bila check-in N hari lagi: masa berlaku DP harus mencakup tanggal check-in. */
+export const dpOptions = (daysToCheckIn: number) => DP_TIERS.filter((t) => daysToCheckIn <= t.days);
+
+/** Rincian tagihan sewa baru (dihitung sama di klien & server). settle = sisa sewa + deposit, dibayar saat check-in. */
+export function bookingBill(monthlyPrice: number, months: number, dpPct: number) {
+  const rent = monthlyPrice * months;
+  const dp = Math.round((rent * dpPct) / 100);
+  const deposit = DEPOSIT_AMOUNT;
+  return { rent, dp, deposit, settle: rent - dp + deposit, total: rent + deposit };
+}
+
+export const DP_TERMS = [
+  "Uang muka minimal 25% dari total sewa, berlaku 13 hari sejak dibayar. Uang muka 50% berlaku 20 hari, 100% berlaku 28 hari.",
+  "Tanggal check-in harus masih dalam masa berlaku uang muka. Sisa sewa dan deposit dilunasi saat check-in.",
+  "Refund 100% uang muka bila pembatalan dikonfirmasi paling lambat 3 hari sejak pembayaran; refund 50% bila paling lambat 8 hari. Lewat dari itu uang muka tidak dapat di-refund.",
+];
+
+export const DEPOSIT_TERMS = [
+  "Deposit Rp 200.000 dibayar saat check-in bersama pelunasan sewa.",
+  "Kembali 100% setelah masa sewa berakhir bila semua barang lengkap dan tidak rusak.",
+  "Kembali 50% bila sprei, bantal, guling, lampu, keset, tong sampah, rak sepatu, cermin, atau set kunci rusak/hilang, atau kamar mandi dalam ditinggalkan kotor.",
+  "Hangus bila kursi atau meja rusak/hilang. Kerusakan barang lain diganti senilai harga per unit.",
+];
+
+/** Tahap pesanan: DP (uang muka) → PELUNASAN (sisa sewa + deposit saat check-in). */
+export const BOOKING_STAGE_LABEL: Record<string, string> = { DP: "Uang Muka", PELUNASAN: "Pelunasan" };
 
 export const BOOKING_STATUS: Record<string, { label: string; tone: "success" | "warning" | "danger" | "info" | "neutral" }> = {
   MENUNGGU_PEMBAYARAN: { label: "Menunggu Pembayaran", tone: "warning" },
@@ -21,6 +60,13 @@ export const BOOKING_STATUS: Record<string, { label: string; tone: "success" | "
   KEDALUWARSA: { label: "Kedaluwarsa", tone: "neutral" },
 };
 
+/** Label status pesanan menurut tahap: "Menunggu Uang Muka", "DP Diterima · Menunggu Pelunasan", dst. */
+export function bookingStatusLabel(b: { stage: string; status: string }) {
+  if (b.status === "MENUNGGU_PEMBAYARAN") return b.stage === "PELUNASAN" ? "DP Diterima · Menunggu Pelunasan" : "Menunggu Uang Muka";
+  if (b.status === "MENUNGGU_VERIFIKASI") return b.stage === "PELUNASAN" ? "Verifikasi Pelunasan" : "Verifikasi Uang Muka";
+  return BOOKING_STATUS[b.status]?.label ?? b.status;
+}
+
 export const PAYMENT_STATUS: Record<string, { label: string; tone: "success" | "warning" | "danger" | "info" | "neutral" }> = {
   MENUNGGU_VERIFIKASI: { label: "Menunggu Verifikasi", tone: "info" },
   DISETUJUI: { label: "Disetujui", tone: "success" },
@@ -28,6 +74,33 @@ export const PAYMENT_STATUS: Record<string, { label: string; tone: "success" | "
 };
 
 export const PAYMENT_KIND_LABEL: Record<string, string> = { SEWA_BARU: "Sewa Baru", PERPANJANGAN: "Perpanjangan" };
+
+/** Label pembayaran: "Uang Muka 25%", "Pelunasan", "Perpanjangan"; data lama tanpa tahap = "Sewa Baru". */
+export const paymentLabel = (p: { kind: string; stage: string; dpPct?: number }) =>
+  p.kind === "PERPANJANGAN"
+    ? "Perpanjangan"
+    : p.stage === "PELUNASAN"
+      ? "Pelunasan"
+      : p.stage === "DP"
+        ? `Uang Muka${p.dpPct ? ` ${p.dpPct}%` : ""}`
+        : "Sewa Baru";
+
+export const INVOICE_STATUS: Record<string, { label: string; tone: "success" | "warning" | "danger" | "info" | "neutral" }> = {
+  BELUM_LUNAS: { label: "Belum Dibayar", tone: "warning" },
+  SEBAGIAN: { label: "Dibayar Sebagian", tone: "info" },
+  LUNAS: { label: "Lunas", tone: "success" },
+  BATAL: { label: "Batal", tone: "neutral" },
+};
+
+// ── Penomoran dokumen Accurate (sementara, PRD §9.10) ──
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+/** "INV" + "2026-10-08" + 1 → "INV-BRAVE-X-2026-0001". Counter direset tiap bulan. */
+export const docNumber = (prefix: "INV" | "RCP", isoDate: string, counter: number) =>
+  `${prefix}-BRAVE-${ROMAN[Number(isoDate.slice(5, 7)) - 1]}-${isoDate.slice(0, 4)}-${String(counter).padStart(4, "0")}`;
+/** Prefix bulan untuk mencari counter terakhir: "INV-BRAVE-X-2026-" */
+export const docPrefix = (prefix: "INV" | "RCP", isoDate: string) => docNumber(prefix, isoDate, 0).slice(0, -4);
+/** ID pelanggan Accurate (sementara): "C.YK0001". */
+export const customerNo = (counter: number) => `C.YK${String(counter).padStart(4, "0")}`;
 
 export const INQUIRY_STATUSES = ["NEW", "CONTACTED", "CLOSED_WON", "CLOSED_LOST"] as const;
 
@@ -43,7 +116,7 @@ export const ROOM_FACILITIES = [
 
 /** Kebijakan global sampai K-12 diputuskan */
 export const MIN_CONTRACT = "1 Bulan";
-export const DEPOSIT = "1 Bulan";
+export const DEPOSIT = "Rp 200.000";
 
 export const KOST_RULES = [
   {
@@ -89,9 +162,3 @@ export const KOST_RULES = [
   },
 ];
 
-/** Tagihan sewa pertama: sewa × paket + deposit (dihitung sama di klien & server). */
-export function bookingBill(monthlyPrice: number, months: number) {
-  const rent = monthlyPrice * months;
-  const deposit = monthlyPrice * DEPOSIT_MONTHS;
-  return { rent, deposit, total: rent + deposit };
-}
